@@ -1,6 +1,7 @@
-
 # Define target output
 target: prom
+
+export GIT_BYPASS = 1
 
 # You can rename the project (e.g., if you build different variants
 # from the same Makefile and source tree). Ruckus will print a fat
