@@ -153,42 +153,4 @@ begin
          trigHw          => trigHw(0),
          freezeHw        => freezeHw(0));
 
---   GEN_STREAMS : 
---   for i in 7 downto 0 generate
---
---      U_DUMMY_STREAM : entity work.DummyCryoStream
---         generic map (
---            TPD_G => TPD_G)
---         port map (
---            clk       => jesdClk,
---            rst       => jesdRst,
---            trig      => trig,
---            dataValid => dataValid(i),
---            dataIndex => dataIndex(i),
---            dataI     => dataI(i),
---            dataQ     => dataQ(i));
---
---   end generate;
---
---   U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
---      generic map (
---         TPD_G => TPD_G)
---      port map (
---         -- Input timing interface (timingClk domain)
---         timingClk       => timingClk,
---         timingRst       => timingRst,
---         timingTimestamp => timingTimestamp,
---         -- Input Data Interface (jesdClk domain)
---         jesdClk         => jesdClkVec,
---         jesdRst         => jesdRstVec,
---         dataValid       => dataValid,
---         dataIndex       => dataIndex,
---         dataI           => dataI,
---         dataQ           => dataQ,
---         -- Output AXIS Interface (axisClk domain)
---         axisClk         => axilClk,
---         axisRst         => axilRst,
---         axisMaster      => obAxisMasters,
---         axisSlave       => obAxisSlaves);
-
 end architecture Stub;
