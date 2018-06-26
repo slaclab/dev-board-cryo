@@ -36,8 +36,8 @@ package body AppCoreConfigPkg is
       -- We want jesdClk2x = 614.4MHz, jesdClk = 307.2Mhz
       config.jesdClk_IDIV    := 11;               -- with AXIL_CLK_FRQ_G = 125*5/4 -> 156.25/11MHz
       config.jesdClk_MULT_F  := 43.25;            -- VCO freq  = 614.347MHz
-      config.jesdClk_ODIV    := 1;                -- jesdClk2x = 614.347MHz;
-      config.jesdUsrClk_ODIV := 3;                -- jesd2x / 3
+      config.jesdClk_ODIV    := 2;                -- jesdClk2x = 614.347MHz;
+      config.jesdUsrClk_ODIV := 6;                -- jesd2x / 3
 
       return config;
    end cryoConfig;
