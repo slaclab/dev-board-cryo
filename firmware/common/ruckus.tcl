@@ -34,3 +34,14 @@ if { ${family} == "zynq" } {
 if { ${family} == "kintexu" } {
    loadRuckusTcl "$::DIR_PATH/UltraScale"
 }
+
+# workaround for PyRogue
+exec rm -rf $::DIR_PATH/python
+
+exec cp -r $::DIR_PATH/pyrogue $::DIR_PATH/python
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/AmcCarrierCore     $::DIR_PATH/python/.
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/AppMps             $::DIR_PATH/python/.
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/AxisBramRingBuffer $::DIR_PATH/python/.
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/BsaCore            $::DIR_PATH/python/.
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/DacSigGen          $::DIR_PATH/python/.
+exec cp -r $::DIR_PATH/../submodules/amc-carrier-core/python/DaqMuxV2 $::DIR_PATH/python/.
