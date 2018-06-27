@@ -201,8 +201,9 @@ begin
                v.rdReady(r.idx)                := '1';
                -- Increment the counter
                v.cnt                           := r.cnt + 1;
+
                -- Pack/move the data
-               case r.cnt(1 downto 0)
+               case r.cnt(1 downto 0) is
                   when "00" =>
                      v.axisMaster.tValid              := '0';
                      v.axisMaster.tData(15 downto 0)  := data(r.idx);
@@ -215,9 +216,8 @@ begin
                   when "11" =>
                      v.axisMaster.tValid              := '1';
                      v.axisMaster.tData(63 downto 48) := data(r.idx);
-                  when "others" =>
-                     v.axisMaster.tValid              := '0';
                end case;
+
                -- Error checking (probably due to FIFO overflow)
                if (r.cnt /= dataIndex(r.idx))  -- Check for misalignment in sequence counter
                             or (r.timestamp /= timestamp(r.idx)) then  -- Check for misalignment in timestamp
@@ -231,7 +231,7 @@ begin
                   -- Set the EOFE flag
                   ssiSetUserEofe(AXI_CONFIG_C, v.axisMaster, v.eofe);
                   -- Next state
-                  v.state            := IDLE_S
+                  v.state            := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------

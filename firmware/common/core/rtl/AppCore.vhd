@@ -162,7 +162,7 @@ begin
    U_GEN_STREAM : 
    for i in 7 downto 0 generate
 
-      trigStream(i) <= startRamp & enableStreams(i);
+      trigStream(i) <= startRamp AND enableStreams(i);
 
       U_Stream : entity work.DummyCryoStream
          generic map (
