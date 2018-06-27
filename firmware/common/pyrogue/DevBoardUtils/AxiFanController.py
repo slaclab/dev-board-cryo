@@ -29,13 +29,23 @@ class AxiFanController(pr.Device):
         
 
         self.add(pr.RemoteVariable(
-            name        = "TemperatureADC",
+            name        = "TemperatureAdc_",
             description = "Sysmon temperature ADC reading",
+            hidden      = True,
             offset      = 0x00,
             bitSize     = 16,
             bitOffset   = 0,
             base        = pr.UInt, 
             mode        = "RO",
+            pollInterval = 1,
+       ))
+
+        self.add(pr.LinkVariable(
+            name        = "Temperature",
+            description = "Sysmon temperature ADC reading",
+            dependencies = [self.TemperatureAdc_],
+            linkedGet    = lambda var: round(var.dependencies[0].value()*502.9098/65536-273.8195, 2),
+            typeStr      = "Float64",
        ))
 
         self.add(pr.RemoteVariable(
@@ -79,13 +89,23 @@ class AxiFanController(pr.Device):
        ))
 
         self.add(pr.RemoteVariable(
-            name        = "RefTempAdc",
+            name        = "RefTempAdc_",
             description = "Feedback Reference Temp. (Equivalent ADC)",
+            hidden      = True,
             offset      = 0x06,
             bitSize     = 16,
             bitOffset   = 0,
             base        = pr.UInt, 
             mode        = "RW",
+       ))
+
+        self.add(pr.LinkVariable(
+            name        = "RefTemperature",
+            description = "Feedback Reference Temp. (Equivalent ADC)",
+            dependencies = [self.RefTempAdc_],
+            linkedGet    = lambda var: round(var.dependencies[0].value()*502.9098/65536-273.8195, 2),
+            linkedSet    = lambda var, value, write: var.dependencies[0].set(round((value + 273.8195)*65536/502.9098) , write=write),
+            typeStr      = "Float64",
        ))
 
         self.add(pr.RemoteVariable(

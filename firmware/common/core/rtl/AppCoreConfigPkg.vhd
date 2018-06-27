@@ -36,8 +36,8 @@ package body AppCoreConfigPkg is
       config.ipAddress       := x"6C03000A";      -- 10.0.3.108 (ETH only);
 
       -- Signal generator setup
-      config.sigGenAddrWidth := 13;
-      config.sigGenRamClk    := "0000000"; -- 0: jesd2x, 1: jesd1x
+      config.sigGenAddrWidth := (others => 13);
+      config.sigGenRamClk    := (others => "11111111"); -- 0: jesd2x, 1: jesd1x
 
       -- Disable BSA
       --config.disableBSA      := true;

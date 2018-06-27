@@ -48,8 +48,12 @@ architecture Stub of AppCore is
    signal dacSigTrigArm   : sl;
    signal dacSigTrigDelay : slv(23 downto 0);
 
-   signal enableStreams   : slv(7 downto 0);
-   signal trigStream      : slv(7 downto 0);
+   signal enableStreams      : slv(7 downto 0);
+   signal enableStreamsSync  : slv(7 downto 0);
+   signal trigStream         : slv(7 downto 0);
+
+   signal streamCounter      : slv32Array(7 downto 0);
+   signal streamCounterRst   : slv(7 downto 0);
 
    signal startRamp  : sl;
    signal selectRamp : sl;
@@ -92,10 +96,10 @@ begin
    for i in 3 downto 0 generate
 
       jesdClkVec(i)   <= jesdClk(0);
-      jesdRstVec(i)   <= jesdClk(0);
+      jesdRstVec(i)   <= jesdRst(0);
 
       jesdClkVec(i+4) <= jesdClk(1);
-      jesdRstVec(i+4) <= jesdClk(1);
+      jesdRstVec(i+4) <= jesdRst(1);
 
    end generate;
 
@@ -128,16 +132,28 @@ begin
          TPD_G            => TPD_G)
       port map (
          -- Configuration/Status
-         dacSigTrigArm   => dacSigTrigArm,
-         dacSigTrigDelay => dacSigTrigDelay,
-         enableStreams   => enableStreams,
+         dacSigTrigArm    => dacSigTrigArm,
+         dacSigTrigDelay  => dacSigTrigDelay,
+         enableStreams    => enableStreams,
+         streamCounter    => streamCounter,
+         streamCounterRst => streamCounterRst,
          -- AXI-Lite Interface
-         axilClk         => axilClk,
-         axilRst         => axilRst,
-         axilReadMaster  => axilReadMasters(REG_INDEX_C),
-         axilReadSlave   => axilReadSlaves(REG_INDEX_C),
-         axilWriteMaster => axilWriteMasters(REG_INDEX_C),
-         axilWriteSlave  => axilWriteSlaves(REG_INDEX_C));
+         axilClk          => axilClk,
+         axilRst          => axilRst,
+         axilReadMaster   => axilReadMasters(REG_INDEX_C),
+         axilReadSlave    => axilReadSlaves(REG_INDEX_C),
+         axilWriteMaster  => axilWriteMasters(REG_INDEX_C),
+         axilWriteSlave   => axilWriteSlaves(REG_INDEX_C));
+
+   Sync_enableStreams : entity work.SynchronizerVector
+   generic map (
+      TPD_G   => TPD_G,
+      WIDTH_G => 8)
+   port map (
+      clk     => jesdClk(0),
+      dataIn  => enableStreams,
+      dataOut => enableStreamsSync);
+
 
    -----------------
    -- Trigger Module
@@ -162,25 +178,26 @@ begin
    U_GEN_STREAM : 
    for i in 7 downto 0 generate
 
-      trigStream(i) <= startRamp AND enableStreams(i);
+      trigStream(i) <= startRamp AND enableStreamsSync(i);
 
       U_Stream : entity work.DummyCryoStream
          generic map (
-            TPD_G     => TPD_G)
+            TPD_G      => TPD_G)
          port map (
-            clk       => jesdClk(0),
-            rst       => jesdRst(0),
-            trig      => trigStream(i),
-            dataValid => streamValid(i),
-            dataIndex => streamIndex(i),
-            data      => streamData(i));
+            clk        => jesdClk(0),
+            rst        => jesdRst(0),
+            trig       => trigStream(i),
+            dataValid  => streamValid(i),
+            dataIndex  => streamIndex(i),
+            data       => streamData(i),
+            counter    => streamCounter(i),
+            counterRst => streamCounterRst(i));
 
    end generate;
 
 
    U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
       generic map (
-         BUILD_DSP_G => BUILD_DSP_G,
          TPD_G       => TPD_G)
       port map (
          -- Input timing interface (timingClk domain)
@@ -196,7 +213,7 @@ begin
          -- Output AXIS Interface (axisClk domain)
          axisClk         => axilClk,
          axisRst         => axilRst,
-         axisMaster      => obAppDebugMaster,
-         axisSlave       => obAppDebugSlave);
+         axisMaster      => obAxisMasters(APP_DEBUG_STRM_C),
+         axisSlave       => obAxisSlaves(APP_DEBUG_STRM_C));
 
 end architecture Stub;

@@ -31,14 +31,17 @@ entity DummyCryoStream is
       TPD_G : time := 1 ns);
    port (
       -- Clock and Reset
-      clk       : in  sl;
-      rst       : in  sl;
+      clk        : in  sl;
+      rst        : in  sl;
       -- Trigger (Flux ramp reset)
-      trig      : in  sl;
+      trig       : in  sl;
       -- SYSGEN Interface
-      dataValid : out  sl;
-      dataIndex : out  slv(8 downto 0);
-      data      : out  slv(15 downto 0));
+      dataValid  : out  sl;
+      dataIndex  : out  slv(8 downto 0);
+      data       : out  slv(15 downto 0);
+      -- counter
+      counter    : out slv(31 downto 0);
+      counterRst : in  sl);
 end DummyCryoStream;
 
 architecture rtl of DummyCryoStream is
@@ -54,6 +57,7 @@ architecture rtl of DummyCryoStream is
       dataValid  : sl;
       dataIndex  : slv(8 downto 0);
       data       : slv(15 downto 0);
+      counter    : slv(31 downto 0);
       state      : StateType;
    end record;
 
@@ -61,14 +65,25 @@ architecture rtl of DummyCryoStream is
       dataValid  => '0',
       dataIndex  => (others => '0'),
       data       => (others => '0'),
+      counter    => (others => '0'),
       state      => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal counterRstSync : sl;
+
 begin
 
-   comb : process (r, rst, trig) is
+   U_SyncRst : entity work.Synchronizer
+   generic map (
+      TPD_G => TPD_G)
+   port map (
+      clk     => clk,
+      dataIn  => counterRst,
+      dataOut => counterRstSync);
+
+   comb : process (r, rst, trig, counterRstSync) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -86,6 +101,7 @@ begin
             if (trig = '1') then
                v.state     := DATA_S;
                v.dataValid := '1';
+               v.counter   := r.counter + 1;
             end if;
          ----------------------------------------------------------------------
          when DATA_S =>
@@ -102,14 +118,18 @@ begin
          v := REG_INIT_C;
       end if;
 
+      if (counterRstSync = '1') then
+         v.counter := (others => '0');
+      end if;
+
       -- Register the variable for next clock cycle
       rin       <= v;
 
       -- Outputs
-      dataIndex <= r.dataIndex;
-      dataValid <= r.dataValid;
-      data      <= r.data;
-
+      dataIndex     <= r.dataIndex;
+      dataValid     <= r.dataValid;
+      data          <= r.data;
+      counter       <= r.counter;
    end process comb;
 
    seq : process (clk) is

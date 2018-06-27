@@ -21,6 +21,50 @@ import pyrogue as pr
 
 from common.SimRtmCryoDet import *
 
+
+class StreamControl(pr.Device):
+    def __init__(   self,
+            name        = "StreamControl",
+            description = "Stream control",
+            **kwargs):
+        super().__init__(name=name, description=description, **kwargs)
+        #########
+        # Devices
+        for i in range(8):
+           self.add(pr.RemoteVariable(
+               name         = f'EnableStream[{i}]',
+               description  = "EnableStream",
+               offset       = 0x03000008,
+               bitSize      = 1,
+               bitOffset    = i,
+               base         = pr.UInt,
+               mode         = "RW",
+           ))
+
+        for i in range(8):
+           self.add(pr.RemoteVariable(
+               name         = f'StreamCounterRst[{i}]',
+               description  = "EnableStream",
+               offset       = 0x03000008,
+               bitSize      = 1,
+               bitOffset    = i+8,
+               base         = pr.UInt,
+               mode         = "RW",
+           ))
+
+        for i in range(8):
+           self.add(pr.RemoteVariable(
+               name         = f'StreamCounter[{i}]',
+               description  = "EnableStream",
+               offset       = 0x0300000C + 0x4*i,
+               bitSize      = 32,
+               bitOffset    = 0,
+               base         = pr.UInt,
+               mode         = "RO",
+               pollInterval = 1,
+           ))
+
+
 class AppCore(pr.Device):
     def __init__(   self,
             name        = "AppCore",
@@ -69,17 +113,9 @@ class AppCore(pr.Device):
             hidden       = True,
         ))
 
-        for i in range(8):
-           self.add(pr.RemoteVariable(
-               name         = "f'EnableStream[{i}]'",
-               description  = "EnableStream",
-               offset       = 0x03000008,
-               bitSize      = 1,
-               bitOffset    = i,
-               base         = pr.UInt,
-               mode         = "RW",
-           ))
-
+        self.add(StreamControl(
+            offset = 0x0000,
+        ))
         ##############################
         # Commands
         ##############################
