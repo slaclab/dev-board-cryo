@@ -104,11 +104,7 @@ architecture mapping of AxisSysgenProcDataFramerRdFsm is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal cntMod4 : slv(1 downto 0) := (others => '0');
-
 begin
-
-   cntMod4 => r.cnt(1 downto 0);
 
    comb : process (axisSlave, r, rdData, rdValid, rst) is
       variable v         : RegType;
