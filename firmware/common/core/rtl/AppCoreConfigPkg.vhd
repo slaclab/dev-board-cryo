@@ -33,6 +33,8 @@ package body AppCoreConfigPkg is
       variable config : AppCoreConfigType := APP_CORE_CONFIG_DFLT_C;
    begin
       config.ipAddress       := x"6C03000A";      -- 10.0.3.108 (ETH only);
+      -- Disable BSA
+      --config.disableBSA      := true;
       -- We want jesdClk2x = 614.4MHz, jesdClk = 307.2Mhz
       config.jesdClk_IDIV    := 11;               -- with AXIL_CLK_FRQ_G = 125*5/4 -> 156.25/11MHz
       config.jesdClk_MULT_F  := 43.25;            -- VCO freq  = 614.347MHz
