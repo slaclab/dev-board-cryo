@@ -1,5 +1,4 @@
-import pyrogue as pr
-
+import pyrogue as pr 
 # Modules from surf
 import pyrogue as pr
 import surf.axi as axi
@@ -12,7 +11,9 @@ import surf.protocols.rssi as rssi
 import surf.xilinx as xilinx
 
 # AmcCarrierCore
-from AmcCarrierCore import *
+from AmcCarrierCore import AmcCarrierBsa
+
+from AppTop import *
 
 from DevBoardUtils import *
 
@@ -87,7 +88,7 @@ class SysReg(pr.Device):
             rssiInterlaved      = False,            
             enableBsa           = True,
             enableMps           = True,
-            expand	            = False,
+            expand	        = False,
             **kwargs):
         super().__init__(name=name, description=description, expand=expand, **kwargs)  
 
@@ -96,15 +97,15 @@ class SysReg(pr.Device):
         ##############################                        
         self.add(axi.AxiVersion(            
             offset       =  0x00000000, 
-            expand       =  False
+            expand       =  False,
         ))
 
         self.add(xilinx.AxiSysMonUltraScale(   
             offset       =  0x02000000, 
-            expand       =  False
+            expand       =  False,
         ))
         
-        self.add(AmcCarrierTiming(
+        self.add(DevBoardTiming(
             offset       =  0x04000000, 
             expand       =  False,
         ))
