@@ -48,6 +48,9 @@ architecture Stub of AppCore is
    signal dacSigTrigArm   : sl;
    signal dacSigTrigDelay : slv(23 downto 0);
 
+   signal enableStreams   : slv(7 downto 0);
+   signal trigStream      : slv(7 downto 0);
+
    signal startRamp  : sl;
    signal selectRamp : sl;
    signal rampCnt    : slv(31 downto 0);
@@ -58,10 +61,9 @@ architecture Stub of AppCore is
    signal jesdRstVec : slv(7 downto 0) := (others => '0');
 
 
-   signal dataValid : slv(7 downto 0)  := (others => '0');
-   signal dataIndex : Slv9Array(7 downto 0);
-   signal dataI     : Slv32Array(7 downto 0);
-   signal dataQ     : Slv32Array(7 downto 0);
+   signal streamValid : slv(7 downto 0)  := (others => '0');
+   signal streamIndex : Slv9Array(7 downto 0);
+   signal streamData  : Slv16Array(7 downto 0);
 
 begin
    ---------------------
@@ -128,6 +130,7 @@ begin
          -- Configuration/Status
          dacSigTrigArm   => dacSigTrigArm,
          dacSigTrigDelay => dacSigTrigDelay,
+         enableStreams   => enableStreams,
          -- AXI-Lite Interface
          axilClk         => axilClk,
          axilRst         => axilRst,
@@ -152,5 +155,48 @@ begin
          evrTrig         => '0',        -- ignore EVR
          trigHw          => trigHw(0),
          freezeHw        => freezeHw(0));
+
+   -----------------
+   -- Trigger Module
+   -----------------
+   U_GEN_STREAM : 
+   for i in 7 downto 0 generate
+
+      trigStream(i) <= startRamp & enableStreams(i);
+
+      U_Stream : entity work.DummyCryoStream
+         generic map (
+            TPD_G     => TPD_G)
+         port map (
+            clk       => jesdClk(0),
+            rst       => jesdRst(0),
+            trig      => trigStream(i),
+            dataValid => streamValid(i),
+            dataIndex => streamIndex(i),
+            data      => streamData(i));
+
+   end generate;
+
+
+   U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
+      generic map (
+         BUILD_DSP_G => BUILD_DSP_G,
+         TPD_G       => TPD_G)
+      port map (
+         -- Input timing interface (timingClk domain)
+         timingClk       => timingClk,
+         timingRst       => timingRst,
+         timingTimestamp => timingBus.message.timestamp,
+         -- Input Data Interface (jesdClk domain)
+         jesdClk         => jesdClkVec,
+         jesdRst         => jesdRstVec,
+         dataValid       => streamValid,
+         dataIndex       => streamIndex,
+         data            => streamData,
+         -- Output AXIS Interface (axisClk domain)
+         axisClk         => axilClk,
+         axisRst         => axilRst,
+         axisMaster      => obAppDebugMaster,
+         axisSlave       => obAppDebugSlave);
 
 end architecture Stub;

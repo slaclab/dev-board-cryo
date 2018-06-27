@@ -30,6 +30,8 @@ entity AppCoreReg is
       -- Configuration/Status
       dacSigTrigArm   : out sl;
       dacSigTrigDelay : out slv(23 downto 0);
+      -- Streaming interface
+      enableStreams   : out slv(7 downto 0);
       -- AXI-Lite Register Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -44,6 +46,7 @@ architecture rtl of AppCoreReg is
    type RegType is record
       dacSigTrigArm   : sl;
       dacSigTrigDelay : slv(23 downto 0);
+      enableStreams   : slv(7 downto 0);
       axilReadSlave   : AxiLiteReadSlaveType;
       axilWriteSlave  : AxiLiteWriteSlaveType;
    end record;
@@ -51,6 +54,7 @@ architecture rtl of AppCoreReg is
    constant REG_INIT_C : RegType := (
       dacSigTrigArm   => '0',
       dacSigTrigDelay => (others => '0'),
+      enableStreams   => (others => '1'),
       axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
 
@@ -78,6 +82,7 @@ begin
       -- Map the read registers
       axiSlaveRegister(regCon, x"00", 0, v.dacSigTrigDelay);
       axiSlaveRegister(regCon, x"04", 0, v.dacSigTrigArm);
+      axiSlaveRegister(regCon, x"08", 0, v.enableStreams);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
@@ -95,6 +100,7 @@ begin
       axilReadSlave   <= r.axilReadSlave;
       dacSigTrigDelay <= r.dacSigTrigDelay;
       dacSigTrigArm   <= r.dacSigTrigArm;
+      enableStreams   <= r.enableStreams;
 
    end process comb;
 
