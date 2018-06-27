@@ -69,6 +69,17 @@ class AppCore(pr.Device):
             hidden       = True,
         ))
 
+        for i in range(8):
+           self.add(pr.RemoteVariable(
+               name         = "f'EnableStream[{i}]'",
+               description  = "EnableStream",
+               offset       = 0x03000008,
+               bitSize      = 1,
+               bitOffset    = i,
+               base         = pr.UInt,
+               mode         = "RW",
+           ))
+
         ##############################
         # Commands
         ##############################
