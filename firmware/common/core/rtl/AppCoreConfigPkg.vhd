@@ -32,16 +32,24 @@ package body AppCoreConfigPkg is
    function cryoConfig return AppCoreConfigType is
       variable config : AppCoreConfigType := APP_CORE_CONFIG_DFLT_C;
    begin
+
       config.ipAddress       := x"6C03000A";      -- 10.0.3.108 (ETH only);
+
+      -- Signal generator setup
+      config.sigGenAddrWidth := 13;
+      config.sigGenRamClk    := "0000000"; -- 0: jesd2x, 1: jesd1x
+
       -- Disable BSA
       --config.disableBSA      := true;
+
       -- We want jesdClk2x = 614.4MHz, jesdClk = 307.2Mhz
       config.jesdClk_IDIV    := 11;               -- with AXIL_CLK_FRQ_G = 125*5/4 -> 156.25/11MHz
       config.jesdClk_MULT_F  := 43.25;            -- VCO freq  = 614.347MHz
-      config.jesdClk_ODIV    := 2;                -- jesdClk2x = 614.347MHz;
-      config.jesdUsrClk_ODIV := 6;                -- jesd2x / 3
+      config.jesdClk_ODIV    := 1;                -- jesdClk2x = 614.347MHz;
+      config.jesdUsrClk_ODIV := 3;                -- jesd2x / 3
 
       return config;
+
    end cryoConfig;
 
 end package body;
