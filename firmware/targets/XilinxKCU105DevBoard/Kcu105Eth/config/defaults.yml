@@ -1,0 +1,72 @@
+AMCc: 
+  FpgaTopLevel:
+    AmcCarrierCore:
+#      AmcCarrierTiming:
+#        enable: False
+      AmcCarrierBsa:
+        BsaWaveformEngine[0]:
+          WaveformEngineBuffers:
+            StartAddr[0]: 0x0000000000000000
+            StartAddr[1]: 0x0000000010000000
+            StartAddr[2]: 0x0000000020000000
+            StartAddr[3]: 0x0000000030000000
+            EndAddr[0]:   0x0000000000004000
+            EndAddr[1]:   0x0000000010004000
+            EndAddr[2]:   0x0000000020004000
+            EndAddr[3]:   0x0000000030004000
+            Enabled[0]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[1]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[2]: 0x0 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[3]: 0x0 # Enabled:  Full rate only supports 2x channels of streaming
+            Mode[:]: DoneWhenFull
+            Init[:]: 0x0
+            SoftTrigger[:]: 0x0
+            MsgDest[:]: Auto-Readout
+            FramesAfterTrigger[:]: 0x0
+        BsaWaveformEngine[1]:
+          WaveformEngineBuffers:
+            StartAddr[0]: 0x0000000040000000
+            StartAddr[1]: 0x0000000050000000
+            StartAddr[2]: 0x0000000060000000
+            StartAddr[3]: 0x0000000070000000
+            EndAddr[0]:   0x0000000040004000
+            EndAddr[1]:   0x0000000050004000
+            EndAddr[2]:   0x0000000060004000
+            EndAddr[3]:   0x0000000070004000
+            Enabled[0]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[1]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[2]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[3]: 0x0 # Disabling 2nd DAQ MUX path
+            Mode[:]: DoneWhenFull
+            Init[:]: 0x0
+            SoftTrigger[:]: 0x0
+            MsgDest[:]: Auto-Readout
+            FramesAfterTrigger[:]: 0x0
+      FanController:
+        Bypass: 0x0
+        Preshift : 0x7
+        Kp: 0x7C
+        RefTemperature: 35
+    AppTop:
+      AppCore:
+        RtmCryoDet:
+          LowCycle: 0x02
+          HighCycle: 0x02
+          FluxRampRateHz: 0x3E8 # 1kHz
+          PulseWidth: 0x100
+          EnableRampTrigger: 0x1
+      DaqMuxV2:
+        DecimationAveraging: 'Disabled'
+        InputMuxSel[0]: 'Ch7'
+        InputMuxSel[1]: 'Ch6'
+        DataBufferSize: 0x1000
+        FormatDataWidth[:]: 'D16-bit'
+        FormatSign[:]: 'Unsigned'
+        DecimationAveraging[:]: 'Disabled'
+        PacketHeaderEn: 'Disabled'
+        TriggerHwAutoRearm: Enabled
+      DacSigGen:
+        EnableMask: 0x3   # Enable both channels
+        ModeMask:   0x3   # Set both channels into 'Periodic Mode'
+        SignFormat: 0x0   # Set both channels to 'Signed 2's complement' format
+        #CsvFilePath: /afs/slac.stanford.edu/u/rl/dandvan/cryo_det/matlab/broad_noise4.csv
