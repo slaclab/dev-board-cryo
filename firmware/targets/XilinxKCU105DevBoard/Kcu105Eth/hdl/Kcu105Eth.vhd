@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : Kcu105GigE.vhd
+-- File       : Kcu105Eth.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-08
 -- Last update: 2017-02-16
@@ -32,12 +32,13 @@ use work.AppCorePkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity Kcu105GigE is
+entity Kcu105Eth is
    generic (
-      TPD_G          : time     := 1 ns;
-      BUILD_INFO_G   : BuildInfoType;
-      SIM_SPEEDUP_G  : boolean  := false;
-      SIMULATION_G   : boolean  := false
+      TPD_G              : time     := 1 ns;
+      BUILD_INFO_G       : BuildInfoType;
+      DISABLE_10G_ETH_G  : natural  := 0;
+      SIM_SPEEDUP_G      : boolean  := false;
+      SIMULATION_G       : boolean  := false
    );
    port (
       -- Misc. IOs
@@ -56,13 +57,17 @@ entity Kcu105GigE is
       muxAddrOut : out slv(2 downto 0);
       -- Fan control
       fanPwmOut  : out sl;
-      -- ETH GT Pins
-      ethClkP    : in  sl;
-      ethClkN    : in  sl;
-      ethRxP     : in  sl;
-      ethRxN     : in  sl;
-      ethTxP     : out sl;
-      ethTxN     : out sl;
+      -- MGT refclk 1 : bank 227 (from Si5238)
+      -- MGT refclk 0 : bank 227 (from Si570 or Si5328 out2 via mux)
+      refClkP    : in  slv(1 downto 0);
+      refClkN    : in  slv(1 downto 0);
+      -- SFP[0] (P5 cage, closer to RJ45      ) Bank 226, GTH-2
+      -- SFP[1] (P4 cage, closer to board edge) Bank 226, GTH-1
+      sfpRxP     : in  slv(1 downto 0);
+      sfpRxN     : in  slv(1 downto 0);
+      sfpTxP     : out slv(1 downto 0);
+      sfpTxN     : out slv(1 downto 0);
+      -- Second SFP cage
       -- SGMII (ext. PHY) ETH
       sgmiiClkP  : in  sl;
       sgmiiClkN  : in  sl;
@@ -70,10 +75,13 @@ entity Kcu105GigE is
       sgmiiRxN   : in  sl;
       sgmiiTxP   : out sl;
       sgmiiTxN   : out sl;
+      -- Si5328 reset
+      si5328RstN : out sl   := '1';
+      si5328Int  : in  sl;
       -- ETH external PHY pins
       phyMdc     : out sl;
-      phyMdio    : inout sl;
-      phyRstN    : out sl; -- active low
+      phyMdio    : inout sl := 'Z';
+      phyRstN    : out sl   := '1'; -- active low
       phyIrqN    : in  sl; -- active low
       -- 300Mhz System Clock
       sysClk300P : in sl;
@@ -97,15 +105,18 @@ entity Kcu105GigE is
       -- I2C Bus
       iicScl     : inout sl;
       iicSda     : inout sl;
-      iicMuxRstL : out   sl;
+      iicMuxRstN : out   sl := '1'; -- deassert IIC Mux reset
       -- SMA
       gpioSmaP   : inout sl;
       gpioSmaN   : inout sl;
       pmod       : inout Slv8Array(1 downto 0)
    );
-end Kcu105GigE;
+end Kcu105Eth;
 
-architecture top_level of Kcu105GigE is
+architecture top_level of Kcu105Eth is
+
+   constant NUM_LANE_C         : natural := 1;
+   constant NUM_APP_LEDS_C     : natural := APP_CORE_CONFIG_C.numAppLEDs;
 
    -- max. positive number; at RST_LEN_LD_C bits this is 2**RST_LEN_LD_C/sysClk256
    -- (01111111...)
@@ -141,29 +152,28 @@ architecture top_level of Kcu105GigE is
       ADDR_WIDTH_C => 31,
       DATA_BYTES_C => 4,
       ID_BITS_C    => 4,
-      LEN_BITS_C   => 8);
+      LEN_BITS_C   => 8
+   );
 
    type MuxedSignalsType is record
-      txMasters     : AxiStreamMasterArray(AXIS_SIZE_C-1 downto 0);
-      txSlaves      : AxiStreamSlaveArray(AXIS_SIZE_C-1 downto 0);
-      rxMasters     : AxiStreamMasterArray(AXIS_SIZE_C-1 downto 0);
-      rxSlaves      : AxiStreamSlaveArray(AXIS_SIZE_C-1 downto 0);
+      txMasters     : AxiStreamMasterArray(NUM_LANE_C-1 downto 0);
+      txSlaves      : AxiStreamSlaveArray(NUM_LANE_C-1 downto 0);
+      rxMasters     : AxiStreamMasterArray(NUM_LANE_C-1 downto 0);
+      rxSlaves      : AxiStreamSlaveArray(NUM_LANE_C-1 downto 0);
    end record;
 
    signal keptSignals   : MuxedSignalsType;
 
-   signal txMastersSGMII: AxiStreamMasterArray(AXIS_SIZE_C-1 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
-   signal txSlavesSGMII : AxiStreamSlaveArray(AXIS_SIZE_C-1 downto 0);
-   signal rxMastersSGMII: AxiStreamMasterArray(AXIS_SIZE_C-1 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
-   signal rxSlavesSGMII : AxiStreamSlaveArray(AXIS_SIZE_C-1 downto 0);
+   signal txMastersSGMII: AxiStreamMasterArray(NUM_LANE_C-1 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
+   signal txSlavesSGMII : AxiStreamSlaveArray (NUM_LANE_C-1 downto 0);
+   signal rxMastersSGMII: AxiStreamMasterArray(NUM_LANE_C-1 downto 0);
+   signal rxSlavesSGMII : AxiStreamSlaveArray (NUM_LANE_C-1 downto 0) := (others => AXI_STREAM_SLAVE_FORCE_C);
 
-   signal sgmiiClk      : sl;
-   signal sgmiiRst      : sl;
-   signal sgmiiRstExt   : sl;
+   signal txMastersGTH  : AxiStreamMasterArray(NUM_LANE_C-1 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
+   signal txSlavesGTH   : AxiStreamSlaveArray (NUM_LANE_C-1 downto 0);
+   signal rxMastersGTH  : AxiStreamMasterArray(NUM_LANE_C-1 downto 0);
+   signal rxSlavesGTH   : AxiStreamSlaveArray (NUM_LANE_C-1 downto 0) := (others => AXI_STREAM_SLAVE_FORCE_C);
 
-   signal sgmiiDmaRst   : sl;
-
-   signal phyMdo        : sl := '1';
 
    signal axiClk        : sl;
    signal axiRst        : sl;
@@ -175,18 +185,7 @@ architecture top_level of Kcu105GigE is
    signal sysRst156_i   : sl;
    signal sysMmcmLocked : sl;
 
-   signal speed10_100   : sl := '0';
-   signal speed100      : sl := '0';
-   signal linkIsUp      : sl := '0';
-
-   signal extPhyRstN    : sl;
-   signal extPhyReady   : sl;
    signal rstCnt        : ResetCountType := RST_DEL_C;
-   signal phyInitRst    : sl;
-   signal phyIrq        : sl;
-   signal phyMdi        : sl;
-
-   signal initDone      : sl := '0';
 
    signal memReady      : sl;
 
@@ -195,22 +194,42 @@ architecture top_level of Kcu105GigE is
    signal memAxiReadMaster     : AxiReadMasterType;
    signal memAxiReadSlave      : AxiReadSlaveType;
 
-   signal appTimingClk         : sl;
-   signal appTimingRst         : sl;
+   signal appTimingClk  : sl;
+   signal appTimingRst  : sl;
 
-   constant NUM_LANE_C         : natural := 1;
-   constant NUM_APP_LEDS_C     : natural := APP_CORE_CONFIG_C.numAppLEDs;
+   signal dmaClk        : slv(NUM_LANE_C-1 downto 0);
+   signal dmaRst        : slv(NUM_LANE_C-1 downto 0);
 
-   signal    dmaClk            : slv(NUM_LANE_C-1 downto 0);
-   signal    dmaRst            : slv(NUM_LANE_C-1 downto 0);
+   signal appLeds       : slv(NUM_APP_LEDS_C - 1 downto 0);
+   signal muxAddrLoc    : slv(4            downto 0);
 
-   signal    appLeds           : slv(NUM_APP_LEDS_C - 1 downto 0);
-   signal    muxAddrLoc        : slv(4            downto 0);
+   signal gpioSmaPBuf   : IOLine;
+   signal gpioSmaNBuf   : IOLine;
+   signal pmodBuf       : PMODArray(1 downto 0);
 
-   signal    gpioSmaPBuf       : IOLine;
-   signal    gpioSmaNBuf       : IOLine;
-   signal    pmodBuf           : PMODArray(1 downto 0);
+   signal speed10_100   : sl := '0';
+   signal speed100      : sl := '0';
+   signal linkIsUp      : sl := '0';
 
+   signal extPhyRstN    : sl;
+   signal extPhyReady   : sl;
+   signal phyInitRst    : sl;
+   signal phyIrq        : sl;
+   signal phyMdi        : sl;
+
+   signal sgmiiClk      : sl;
+   signal sgmiiRst      : sl;
+
+   signal phyMdo        : sl := '1';
+
+   signal initDone      : sl := '0';
+
+   signal ethMuxGTH     : sl := '0';
+
+   signal localMac      : slv(47 downto 0) := APP_CORE_CONFIG_C.macAddress;
+   signal localIp       : slv(31 downto 0) := APP_CORE_CONFIG_C.ipAddress;
+
+   signal localMacArray : Slv48Array(NUM_LANE_C - 1 downto 0);
 
    attribute dont_touch                 : string;
    attribute dont_touch of keptSignals  : signal is "TRUE";
@@ -231,9 +250,6 @@ architecture top_level of Kcu105GigE is
    end component Ila_256;
 
 begin
-
-   sgmiiRstExt <= extRst;
-   sgmiiDmaRst <= sysRst156;
 
    -- 300MHz system clock
    U_SysClk300IBUFDS : IBUFDS
@@ -364,7 +380,7 @@ begin
       );
 
    dmaClk <= (others => sysClk156);
-   dmaRst <= (others => sgmiiDmaRst);
+   dmaRst <= (others => sysRst156);
 
    U_1GigE_SGMII : entity work.GigEthLVDSUltraScaleWrapper
       generic map (
@@ -377,10 +393,11 @@ begin
          DIVCLK_DIVIDE_G    => 2,       -- 312.5 MHz
          CLKFBOUT_MULT_F_G  => 2.0,     -- VCO: 625 MHz
          -- AXI Streaming Configurations
-         AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C))
+         AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C)
+      )
       port map (
          -- Local Configurations
-         localMac           => (others => APP_CORE_CONFIG_C.macAddress),
+         localMac           => localMacArray,
          -- Streaming DMA Interface
          dmaClk             => dmaClk,
          dmaRst             => dmaRst,
@@ -389,7 +406,7 @@ begin
          dmaObMasters       => txMastersSGMII,
          dmaObSlaves        => txSlavesSGMII,
          -- Misc. Signals
-         extRst             => sgmiiRstExt,
+         extRst             => extRst,
          phyClk             => sgmiiClk,
          phyRst             => sgmiiRst,
          phyReady           => open,
@@ -404,41 +421,96 @@ begin
          sgmiiTxP(0)        => sgmiiTxP,
          sgmiiTxN(0)        => sgmiiTxN,
          sgmiiRxP(0)        => sgmiiRxP,
-         sgmiiRxN(0)        => sgmiiRxN);
-
-   txMastersSGMII         <= keptSignals.txMasters;
-   rxSlavesSGMII          <= keptSignals.rxSlaves;
-
-   keptSignals.txSlaves   <= txSlavesSGMII;
-   keptSignals.rxMasters  <= rxMastersSGMII;
-
-   U_SMAPBUF : IOBUF
-      port map (
-         io => gpioSmaP,
-         i  => gpioSmaPBuf.i,
-         o  => gpioSmaPBuf.o,
-         t  => gpioSmaPBuf.t
+         sgmiiRxN(0)        => sgmiiRxN
       );
 
-   U_SMANBUF : IOBUF
-         port map (
-            io => gpioSmaN,
-            i  => gpioSmaNBuf.i,
-            o  => gpioSmaNBuf.o,
-            t  => gpioSmaNBuf.t
-         );
+   GEN_10G_GTH : if ( DISABLE_10G_ETH_G = 0 ) generate
+      signal clk      : sl;
+      signal rst      : sl;
+      signal phyReady : sl;
+   begin
+   -----------------
+   -- 10 GigE Module
+   -----------------
 
-   GEN_PMODBUF_I : for i in pmod'left downto pmod'right generate
-      GEN_PMODBUF_J : for j in pmod(i)'left downto pmod(i)'right generate
-         U_PMODBUF : IOBUF
-            port map (
-               io => pmod(i)(j),
-               i  => pmodBuf(i)(j).i,
-               o  => pmodBuf(i)(j).o,
-               t  => pmodBuf(i)(j).t
-            );
-      end generate;
+   U_10GigE : entity work.TenGigEthGthUltraScaleWrapper
+      generic map (
+         TPD_G             => TPD_G,
+         NUM_LANE_G        => 1,
+         -- QUAD PLL Configurations
+         QPLL_REFCLK_SEL_G => "001",
+         -- AXI Streaming Configurations
+         AXIS_CONFIG_G     => (others => EMAC_AXIS_CONFIG_C))
+      port map (
+         -- Local Configurations
+         localMac          => localMacArray,
+
+         -- Streaming DMA Interface
+         dmaClk       => dmaClk,
+         dmaRst       => dmaRst,
+         dmaIbMasters => rxMastersGTH,
+         dmaIbSlaves  => rxSlavesGTH,
+         dmaObMasters => txMastersGTH,
+         dmaObSlaves  => txSlavesGTH,
+         -- Misc. Signals
+         extRst       => extRst,
+         coreClk      => clk, -- out
+         coreRst      => rst, -- out
+
+         phyReady(0)  => phyReady,
+         -- MGT Clock Port (156.25 MHz or 312.5 MHz)
+         gtClkP       => refClkP(0),
+         gtClkN       => refClkN(0),
+         -- MGT Ports
+         gtTxP(0)     => sfpTxP(0),
+         gtTxN(0)     => sfpTxN(0),
+         gtRxP(0)     => sfpRxP(0),
+         gtRxN(0)     => sfpRxN(0)
+      );
+
+   -- latch state of dip-switch during reset
+   P_ETH_MUX_SWITCH : process ( sysClk156 )
+   begin
+      if ( rising_edge( sysClk156 ) ) then
+         if ( sysRst156 = '1' ) then
+            ethMuxGTH <= gpioDip(3);
+         end if;
+      end if;
+   end process P_ETH_MUX_SWITCH;
+
    end generate;
+
+   P_ETH_MUX : process( ethMuxGTH, keptSignals, txSlavesGTH, txSlavesSGMII, rxMastersGTH, rxMastersSGMII )
+   begin
+      if ( ethMuxGTH = '1' ) then
+         txMastersGTH          <= keptSignals.txMasters;
+         keptSignals.txSlaves  <= txSlavesGTH;
+         rxSlavesGTH           <= keptSignals.rxSlaves;
+         keptSignals.rxMasters <= rxMastersGTH;
+         txMastersSGMII        <= (others => AXI_STREAM_MASTER_INIT_C);
+         rxSlavesSGMII         <= (others => AXI_STREAM_SLAVE_FORCE_C);
+      else
+         txMastersSGMII        <= keptSignals.txMasters;
+         keptSignals.txSlaves  <= txSlavesSGMII;
+         rxSlavesSGMII         <= keptSignals.rxSlaves;
+         keptSignals.rxMasters <= rxMastersSGMII;
+         txMastersGTH          <= (others => AXI_STREAM_MASTER_INIT_C);
+         rxSlavesGTH           <= (others => AXI_STREAM_SLAVE_FORCE_C);
+      end if;
+   end process P_ETH_MUX;
+
+   -- latch state of dip-switch during reset
+   P_ETH_MUX_SWITCH : process ( sysClk156 )
+   begin
+      if ( rising_edge( sysClk156 ) ) then
+         if ( sysRst156 = '1' ) then
+            localMac(42 downto 40) <= APP_CORE_CONFIG_C.macAddress(42 downto 40) xor gpioDip(2 downto 0);
+            localIp (26 downto 24) <= APP_CORE_CONFIG_C.ipAddress (26 downto 24) xor gpioDip(2 downto 0);
+         end if;
+      end if;
+   end process P_ETH_MUX_SWITCH;
+
+   localMacArray <= (others => localMac);
 
    -------------------
    -- Application Core
@@ -455,6 +527,10 @@ begin
          -- Clock and Reset
          axilClk        => sysClk156,
          axilRst        => sysRst156,
+
+         -- Networking Config.
+         localMac       => localMac,
+         localIp        => localIp,
          -- AXIS interface
          txMasters      => keptSignals.txMasters,
          txSlaves       => keptSignals.txSlaves,
@@ -487,12 +563,12 @@ begin
          iicScl         => iicScl,
          iicSda         => iicSda,
 
-         timingRefClkP  => ethClkP,
-         timingRefClkN  => ethClkN,
-         timingRxP      => ethRxP,
-         timingRxN      => ethRxN,
-         timingTxP      => ethTxP,
-         timingTxN      => ethTxN,
+         timingRefClkP  => refClkP(1),
+         timingRefClkN  => refClkN(1),
+         timingRxP      => sfpRxP(1),
+         timingRxN      => sfpRxN(1),
+         timingTxP      => sfpTxP(1),
+         timingTxN      => sfpTxN(1),
          appTimingClk   => appTimingClk,
          appTimingRst   => appTimingRst,
          gpioDip        => gpioDip,
@@ -502,59 +578,53 @@ begin
          pmod           => pmodBuf
       );
 
-   muxAddrOut <= muxAddrLoc(2 downto 0);
-
    U_DdrMem : entity work.AmcCarrierDdrMem
-   port map (
-      -- AXI-Lite Interface
-      axilClk           => sysClk156,
-      axilRst           => sysRst156,
-      axilReadMaster    => AXI_LITE_READ_MASTER_INIT_C,
-      axilReadSlave     => open,
-      axilWriteMaster   => AXI_LITE_WRITE_MASTER_INIT_C,
-      axilWriteSlave    => open,
+      port map (
+         -- AXI-Lite Interface
+         axilClk           => sysClk156,
+         axilRst           => sysRst156,
+         axilReadMaster    => AXI_LITE_READ_MASTER_INIT_C,
+         axilReadSlave     => open,
+         axilWriteMaster   => AXI_LITE_WRITE_MASTER_INIT_C,
+         axilWriteSlave    => open,
 
-      memReady          => memReady,
-      memError          => open,
+         memReady          => memReady,
+         memError          => open,
 
-      -- AXI4 Interface
-      axiClk           => axiClk,
-      axiRst           => axiRst,
-      axiWriteMaster   => memAxiWriteMaster,
-      axiWriteSlave    => memAxiWriteSlave,
-      axiReadMaster    => memAxiReadMaster,
-      axiReadSlave     => memAxiReadSlave,
-      ----------------
-      -- Core Ports --
-      ----------------
-      -- DDR4 Ports
-      refClk           => ddrClk300,
-      c0_ddr4_adr      => c0_ddr4_adr,
-      c0_ddr4_dq       => c0_ddr4_dq,
-      c0_ddr4_dm_dbi_n => c0_ddr4_dm_dbi_n,
-      c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
-      c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
-      c0_ddr4_ba       => c0_ddr4_ba,
-      c0_ddr4_bg       => c0_ddr4_bg,
-      c0_ddr4_cke      => c0_ddr4_cke,
-      c0_ddr4_cs_n     => c0_ddr4_cs_n,
-      c0_ddr4_odt      => c0_ddr4_odt,
-      c0_ddr4_reset_n  => c0_ddr4_reset_n,
-      c0_ddr4_act_n    => c0_ddr4_act_n,
-      c0_ddr4_ck_c     => c0_ddr4_ck_c,
-      c0_ddr4_ck_t     => c0_ddr4_ck_t,
-      c0_ddr4_alert_n  => c0_ddr4_alert_n
-   );
-
-   ----------------
-   -- IIC Bus (deassert MUX/Switch reset)
-   ----------------
-
-   iicMuxRstL <= '1';
+         -- AXI4 Interface
+         axiClk           => axiClk,
+         axiRst           => axiRst,
+         axiWriteMaster   => memAxiWriteMaster,
+         axiWriteSlave    => memAxiWriteSlave,
+         axiReadMaster    => memAxiReadMaster,
+         axiReadSlave     => memAxiReadSlave,
+         ----------------
+         -- Core Ports --
+         ----------------
+         -- DDR4 Ports
+         refClk           => ddrClk300,
+         c0_ddr4_adr      => c0_ddr4_adr,
+         c0_ddr4_dq       => c0_ddr4_dq,
+         c0_ddr4_dm_dbi_n => c0_ddr4_dm_dbi_n,
+         c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
+         c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
+         c0_ddr4_ba       => c0_ddr4_ba,
+         c0_ddr4_bg       => c0_ddr4_bg,
+         c0_ddr4_cke      => c0_ddr4_cke,
+         c0_ddr4_cs_n     => c0_ddr4_cs_n,
+         c0_ddr4_odt      => c0_ddr4_odt,
+         c0_ddr4_reset_n  => c0_ddr4_reset_n,
+         c0_ddr4_act_n    => c0_ddr4_act_n,
+         c0_ddr4_ck_c     => c0_ddr4_ck_c,
+         c0_ddr4_ck_t     => c0_ddr4_ck_t,
+         c0_ddr4_alert_n  => c0_ddr4_alert_n
+      );
 
    ----------------
    -- Misc. Signals
    ----------------
+   led(NUM_APP_LEDS_C - 1 downto 0) <= appLeds;
+
    GEN_LED_7 : if ( NUM_APP_LEDS_C < 8 ) generate
       led(7) <= linkIsUp;
    end generate;
@@ -571,12 +641,43 @@ begin
       led(4) <= memReady;
    end generate;
 
-   led(NUM_APP_LEDS_C - 1 downto 0) <= appLeds;
-
    -- Tri-state driver for phyMdio
    phyMdio <= 'Z' when phyMdo = '1' else '0';
    -- Reset line of the external phy
    phyRstN <= extPhyRstN;
+
+   -- SysMon Mux
+   muxAddrOut <= muxAddrLoc(2 downto 0);
+
+   -- User SMA
+   U_SMAPBUF : IOBUF
+      port map (
+         io => gpioSmaP,
+         i  => gpioSmaPBuf.i,
+         o  => gpioSmaPBuf.o,
+         t  => gpioSmaPBuf.t
+      );
+
+   U_SMANBUF : IOBUF
+      port map (
+         io => gpioSmaN,
+         i  => gpioSmaNBuf.i,
+         o  => gpioSmaNBuf.o,
+         t  => gpioSmaNBuf.t
+      );
+
+   -- PMOD connectors
+   GEN_PMODBUF_I : for i in pmod'left downto pmod'right generate
+      GEN_PMODBUF_J : for j in pmod(i)'left downto pmod(i)'right generate
+         U_PMODBUF : IOBUF
+            port map (
+               io => pmod(i)(j),
+               i  => pmodBuf(i)(j).i,
+               o  => pmodBuf(i)(j).o,
+               t  => pmodBuf(i)(j).t
+            );
+      end generate;
+   end generate;
 
    U_ila     : component Ila_256
       port map (
