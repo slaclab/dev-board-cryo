@@ -80,6 +80,69 @@ class LocReg(pr.Device):
             mode        = "RW",
        ))
 
+class IIC(pr.Device):
+    def __init__(   self, 
+            name                = "IIC", 
+            description         = "IIC", 
+            hidden              = False, 
+            expand              = False,
+            **kwargs):
+        super().__init__(name=name, description=description, expand=expand, **kwargs)  
+
+        self.add(pr.RemoteVariable(
+            name        = "Tca9548",
+            description = " ",
+            offset      = 0x0,
+            bitSize     = 8,
+            bitOffset   = 0,
+            base        = pr.UInt, 
+            mode        = "RW",
+       ))
+
+        for i in range(256):
+            self.add(pr.RemoteVariable(
+                name        = f'Si570[{i}]',
+                description = " ",
+                offset      = 0x0400+0x4*i,
+                bitSize     = 32,
+                bitOffset   = 0,
+                base        = pr.UInt, 
+                mode        = "RW",
+           ))
+
+        self.add(pr.RemoteVariable(
+            name        = "Pca9544",
+            description = " ",
+            offset      = 0x0800,
+            bitSize     = 8,
+            bitOffset   = 0,
+            base        = pr.UInt, 
+            mode        = "RW",
+       ))
+
+        for i in range(256):
+            self.add(pr.RemoteVariable(
+                name        = f'SFP[{i}]',
+                description = " ",
+                offset      = 0x0C00 + 0x4*i,
+                bitSize     = 32,
+                bitOffset   = 0,
+                base        = pr.UInt, 
+                mode        = "RW",
+           ))
+
+        for i in range(256):
+            self.add(pr.RemoteVariable(
+                name        = f'Si5328[{i}]',
+                description = " ",
+                offset      = 0x1000 + 0x4*i,
+                bitSize     = 32,
+                bitOffset   = 0,
+                base        = pr.UInt, 
+                mode        = "RW",
+           ))
+
+
 class SysReg(pr.Device):
     def __init__(   self, 
             name                = "SysReg", 
@@ -102,6 +165,11 @@ class SysReg(pr.Device):
 
         self.add(xilinx.AxiSysMonUltraScale(   
             offset       =  0x02000000, 
+            expand       =  False,
+        ))
+
+        self.add(IIC(   
+            offset       =  0x03000000, 
             expand       =  False,
         ))
         
