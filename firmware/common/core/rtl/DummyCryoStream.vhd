@@ -22,29 +22,47 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use ieee.std_logic_arith.all;
+use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity DummyCryoStream is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G            : time             := 1 ns;
+      AXI_BASE_ADDR_G  : slv(31 downto 0) := (others => '0'));
    port (
       -- Clock and Reset
-      clk        : in  sl;
-      rst        : in  sl;
+      clk             : in  sl;
+      rst             : in  sl;
       -- Trigger (Flux ramp reset)
-      trig       : in  sl;
+      trig            : in  sl;
       -- SYSGEN Interface
-      dataValid  : out  sl;
-      dataIndex  : out  slv(8 downto 0);
-      data       : out  slv(15 downto 0);
-      -- counter
-      counter    : out slv(31 downto 0);
-      counterRst : in  sl);
+      dataValid       : out  slv(7 downto 0);
+      dataIndex       : out  Slv9Array(7 downto 0);
+      data            : out  Slv16Array(7 downto 0);
+      -- AXI-Lite Interface
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType);
+
+
 end DummyCryoStream;
 
 architecture rtl of DummyCryoStream is
+
+   constant NUM_AXI_MASTERS_C : natural := 8;
+
+   constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 16, 11);
+
+   signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
+   signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
+   signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
+   signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
+
 
    constant SOF_CNT_C : slv(8 downto 0) := (others => '0');
    constant EOF_CNT_C : slv(8 downto 0) := (others => '1');
@@ -54,43 +72,102 @@ architecture rtl of DummyCryoStream is
       DATA_S);
 
    type RegType is record
-      dataValid  : sl;
-      dataIndex  : slv(8 downto 0);
-      data       : slv(15 downto 0);
-      counter    : slv(31 downto 0);
-      state      : StateType;
+      dataValid    : sl;
+      dataValidR1  : sl;
+      dataValidR2  : sl;
+      dataIndex    : slv(8 downto 0);
+      dataIndexR1  : slv(8 downto 0);
+      dataIndexR2  : slv(8 downto 0);
+      data         : Slv16Array(7 downto 0);
+      state        : StateType;
    end record;
 
    constant REG_INIT_C : RegType := (
-      dataValid  => '0',
-      dataIndex  => (others => '0'),
-      data       => (others => '0'),
-      counter    => (others => '0'),
-      state      => IDLE_S);
+      dataValid    => '0',
+      dataValidR1  => '0',
+      dataValidR2  => '0',
+      dataIndex    => (others => '0'),
+      dataIndexR1  => (others => '0'),
+      dataIndexR2  => (others => '0'),
+      data         => (others => (others => '0')),
+      state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal counterRstSync : sl;
+   signal ramAddr        : slv(8 downto 0);
+   signal ramData        : Slv16Array(7 downto 0);
 
 begin
 
-   U_SyncRst : entity work.Synchronizer
-   generic map (
-      TPD_G => TPD_G)
-   port map (
-      clk     => clk,
-      dataIn  => counterRst,
-      dataOut => counterRstSync);
+   ---------------------
+   -- AXI-Lite Crossbar
+   ---------------------
+   U_XBAR : entity work.AxiLiteCrossbar
+      generic map (
+         TPD_G              => TPD_G,
+         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
+         MASTERS_CONFIG_G   => AXI_CONFIG_C)
+      port map (
+         axiClk              => axilClk,
+         axiClkRst           => axilRst,
+         sAxiWriteMasters(0) => axilWriteMaster,
+         sAxiWriteSlaves(0)  => axilWriteSlave,
+         sAxiReadMasters(0)  => axilReadMaster,
+         sAxiReadSlaves(0)   => axilReadSlave,
+         mAxiWriteMasters    => axilWriteMasters,
+         mAxiWriteSlaves     => axilWriteSlaves,
+         mAxiReadMasters     => axilReadMasters,
+         mAxiReadSlaves      => axilReadSlaves);
 
-   comb : process (r, rst, trig, counterRstSync) is
+
+   GEN_BRAM : for i in 7 downto 0 generate
+
+      --------------------------------          
+      -- AXI-Lite Shared Memory Module
+      --------------------------------          
+      U_Mem : entity work.AxiDualPortRam
+         generic map (
+            TPD_G            => TPD_G,
+            BRAM_EN_G        => true,
+            REG_EN_G         => true,  -- true = 2 cycle read access latency
+            AXI_WR_EN_G      => true,
+            SYS_WR_EN_G      => false,
+            COMMON_CLK_G     => false,
+            ADDR_WIDTH_G     => 9,
+            DATA_WIDTH_G     => 16)
+         port map (
+            -- Clock and Reset
+            clk            => clk,
+            rst            => rst,
+            we             => '0',
+            addr           => r.dataIndex,
+            din            => x"0000",
+            dout           => data(i),
+            -- AXI-Lite Interface
+            axiClk         => axilClk,
+            axiRst         => axilRst,
+            axiReadMaster  => axilReadMasters(i),
+            axiReadSlave   => axilReadSlaves(i),
+            axiWriteMaster => axilWriteMasters(i),
+            axiWriteSlave  => axilWriteSlaves(i));
+
+   end generate GEN_BRAM;
+
+
+   comb : process (r, rst, trig) is
       variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
-      -- increment data every clock (307.2 MHz for cryo)
-      v.data := r.data + '1';
+      -- BRAM has 2 CC delay
+      v.dataIndexR2 := v.dataIndexR1;
+      v.dataIndexR1 := v.dataIndex;
+
+      v.dataValidR2 := v.dataValidR1;
+      v.dataValidR1 := v.dataValid;
 
       -- State Machine
       case (r.state) is
@@ -101,7 +178,6 @@ begin
             if (trig = '1') then
                v.state     := DATA_S;
                v.dataValid := '1';
-               v.counter   := r.counter + 1;
             end if;
          ----------------------------------------------------------------------
          when DATA_S =>
@@ -118,18 +194,12 @@ begin
          v := REG_INIT_C;
       end if;
 
-      if (counterRstSync = '1') then
-         v.counter := (others => '0');
-      end if;
-
       -- Register the variable for next clock cycle
       rin       <= v;
 
       -- Outputs
-      dataIndex     <= r.dataIndex;
-      dataValid     <= r.dataValid;
-      data          <= r.data;
-      counter       <= r.counter;
+      dataIndex     <= (others => r.dataIndexR2);
+      dataValid     <= (others => r.dataValidR2);
    end process comb;
 
    seq : process (clk) is

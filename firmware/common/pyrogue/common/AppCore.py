@@ -22,6 +22,25 @@ import pyrogue as pr
 from common.SimRtmCryoDet import *
 
 
+class StreamData(pr.Device):
+    def __init__(   self,
+            name        = "StreamReg",
+            description = "Stream control",
+            **kwargs):
+        super().__init__(name=name, description=description, **kwargs)
+        #########
+        # Devices
+        for i in range(4096):
+           self.add(pr.RemoteVariable(
+               name         = f'StreamData[{i}]',
+               description  = "Dummy stream data",
+               offset       = 0x000000 + i*0x4,
+               bitSize      = 16,
+               bitOffset    = 0,
+               base         = pr.Int,
+               mode         = "RW",
+           ))
+
 class StreamControl(pr.Device):
     def __init__(   self,
             name        = "StreamControl",
@@ -30,39 +49,36 @@ class StreamControl(pr.Device):
         super().__init__(name=name, description=description, **kwargs)
         #########
         # Devices
-        for i in range(8):
-           self.add(pr.RemoteVariable(
-               name         = f'EnableStream[{i}]',
-               description  = "EnableStream",
-               offset       = 0x03000008,
-               bitSize      = 1,
-               bitOffset    = i,
-               base         = pr.UInt,
-               mode         = "RW",
-           ))
+        self.add(pr.RemoteVariable(
+            name         = "EnableStreams",
+            description  = "EnableStream",
+            offset       = 0x00000008,
+            bitSize      = 1,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
 
-        for i in range(8):
-           self.add(pr.RemoteVariable(
-               name         = f'StreamCounterRst[{i}]',
-               description  = "EnableStream",
-               offset       = 0x03000008,
-               bitSize      = 1,
-               bitOffset    = i+8,
-               base         = pr.UInt,
-               mode         = "RW",
-           ))
+        self.add(pr.RemoteVariable(
+            name         = "StreamCounterRst",
+            description  = "Reset stream counters",
+            offset       = 0x00000008,
+            bitSize      = 1,
+            bitOffset    = 8,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
 
-        for i in range(8):
-           self.add(pr.RemoteVariable(
-               name         = f'StreamCounter[{i}]',
-               description  = "EnableStream",
-               offset       = 0x0300000C + 0x4*i,
-               bitSize      = 32,
-               bitOffset    = 0,
-               base         = pr.UInt,
-               mode         = "RO",
-               pollInterval = 1,
-           ))
+        self.add(pr.RemoteVariable(
+            name         = "StreamCounter",
+            description  = "EnableStream",
+            offset       = 0x0000000C,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
 
 
 class AppCore(pr.Device):
@@ -114,8 +130,14 @@ class AppCore(pr.Device):
         ))
 
         self.add(StreamControl(
-            offset = 0x0000,
+           offset=0x03000000, 
         ))
+
+        self.add(StreamData(
+           offset=0x04000000, 
+           expand=False,
+        ))
+
         ##############################
         # Commands
         ##############################

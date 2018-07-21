@@ -495,32 +495,32 @@ begin
       --  c) update the toplevel constraints so that the timing GTH
       --     takes its clock from the correct MGTREFCLK inputs.
 
-      U_TimingClkSwitcher : entity work.TimingClkSwitcher(TimingClkSwitcherSi5328)
-         generic map (
-            TPD_G                  => TPD_G,
-            CLOCK_AXIL_BASE_ADDR_G => SI5328_AXIL_BASE_ADDR_C,
-            TCASW_AXIL_BASE_ADDR_G => TCASW_AXIL_BASE_ADDR_C,
-            AXIL_FREQ_G            => AXIL_CLK_FRQ_G
-         )
-         port map (
-            axilClk                => clk,
-            axilRst                => rst,
+      --U_TimingClkSwitcher : entity work.TimingClkSwitcher(TimingClkSwitcherSi5328)
+      --   generic map (
+      --      TPD_G                  => TPD_G,
+      --      CLOCK_AXIL_BASE_ADDR_G => SI5328_AXIL_BASE_ADDR_C,
+      --      TCASW_AXIL_BASE_ADDR_G => TCASW_AXIL_BASE_ADDR_C,
+      --      AXIL_FREQ_G            => AXIL_CLK_FRQ_G
+      --   )
+      --   port map (
+      --      axilClk                => clk,
+      --      axilRst                => rst,
 
-            clkSel                 => timingClkSel, -- timingClkSel already in AXIL domain
+      --      clkSel                 => timingClkSel, -- timingClkSel already in AXIL domain
 
-            txRst                  => timingTxRstAsync,
-            rxRst                  => timingRxRst,
+      --      txRst                  => timingTxRstAsync,
+      --      rxRst                  => timingRxRst,
 
-            mAxilReadMaster        => tAxilReadMaster,
-            mAxilReadSlave         => tAxilReadSlave,
-            mAxilWriteMaster       => tAxilWriteMaster,
-            mAxilWriteSlave        => tAxilWriteSlave,
+      --      mAxilReadMaster        => tAxilReadMaster,
+      --      mAxilReadSlave         => tAxilReadSlave,
+      --      mAxilWriteMaster       => tAxilWriteMaster,
+      --      mAxilWriteSlave        => tAxilWriteSlave,
 
-            sAxilReadMaster        => mAxilReadMasters (TCLKSWI_INDEX_C),
-            sAxilReadSlave         => mAxilReadSlaves  (TCLKSWI_INDEX_C),
-            sAxilWriteMaster       => mAxilWriteMasters(TCLKSWI_INDEX_C),
-            sAxilWriteSlave        => mAxilWriteSlaves (TCLKSWI_INDEX_C)
-          );
+      --      sAxilReadMaster        => mAxilReadMasters (TCLKSWI_INDEX_C),
+      --      sAxilReadSlave         => mAxilReadSlaves  (TCLKSWI_INDEX_C),
+      --      sAxilWriteMaster       => mAxilWriteMasters(TCLKSWI_INDEX_C),
+      --      sAxilWriteSlave        => mAxilWriteSlaves (TCLKSWI_INDEX_C)
+      --    );
 
    end generate;
 

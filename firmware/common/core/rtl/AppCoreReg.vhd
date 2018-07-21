@@ -17,7 +17,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
+use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
@@ -25,15 +25,16 @@ use work.AxiLitePkg.all;
 
 entity AppCoreReg is
    generic (
-      TPD_G            : time            := 1 ns);
+      TPD_G            : time            := 1 ns;
+      AXI_BASE_ADDR_G  : slv(31 downto 0) := (others => '0'));
    port (
       -- Configuration/Status
       dacSigTrigArm   : out sl;
       dacSigTrigDelay : out slv(23 downto 0);
       -- Streaming interface
-      enableStreams   : out slv(7 downto 0);
-      streamCounter   : in  slv32Array(7 downto 0);
-      streamCounterRst: out slv(7 downto 0);
+      enableStreams   : out sl;
+      streamCounter   : in  slv(31 downto 0);
+      streamCounterRst: out sl;
       -- AXI-Lite Register Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -48,9 +49,9 @@ architecture rtl of AppCoreReg is
    type RegType is record
       dacSigTrigArm   : sl;
       dacSigTrigDelay : slv(23 downto 0);
-      enableStreams   : slv(7 downto 0);
-      streamCounter   : slv32Array(7 downto 0);
-      streamCounterRst: slv(7 downto 0);
+      enableStreams   : sl;
+      streamCounter   : slv(31 downto 0);
+      streamCounterRst: sl;
       axilReadSlave   : AxiLiteReadSlaveType;
       axilWriteSlave  : AxiLiteWriteSlaveType;
    end record;
@@ -58,31 +59,20 @@ architecture rtl of AppCoreReg is
    constant REG_INIT_C : RegType := (
       dacSigTrigArm   => '0',
       dacSigTrigDelay => (others => '0'),
-      enableStreams   => (others => '1'),
-      streamCounter   => (others => (others => '0')),
-      streamCounterRst=> (others => '0'),
+      enableStreams   => '1',
+      streamCounter   => (others => '0'),
+      streamCounterRst=> '0',
       axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal counterSync : slv32Array(7 downto 0);
+   signal counterSync : slv(31 downto 0);
 
 begin
 
-   U_Sync : for i in 7 downto 0 generate
-      U_SyncCounter : entity work.SynchronizerVector
-      generic map (
-         TPD_G   => TPD_G,
-         WIDTH_G => 32)
-      port map (
-         clk     => axilClk,
-         dataIn  => streamCounter(i),
-         dataOut => counterSync(i));
-   
-   end generate;
-
+   counterSync <= streamCounter;
    --------------------- 
    -- AXI Lite Interface
    --------------------- 
@@ -96,14 +86,7 @@ begin
       -- Reset strobes
       v.dacSigTrigArm := '0';
 
-      v.streamCounter(0) := counterSync(0);
-      v.streamCounter(1) := counterSync(1);
-      v.streamCounter(2) := counterSync(2);
-      v.streamCounter(3) := counterSync(3);
-      v.streamCounter(4) := counterSync(4);
-      v.streamCounter(5) := counterSync(5);
-      v.streamCounter(6) := counterSync(6);
-      v.streamCounter(7) := counterSync(7);
+      v.streamCounter := counterSync;
 
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -113,14 +96,7 @@ begin
       axiSlaveRegister(regCon, x"04", 0, v.dacSigTrigArm);
       axiSlaveRegister(regCon, x"08", 0, v.enableStreams);
       axiSlaveRegister(regCon, x"08", 8, v.streamCounterRst);
-      axiSlaveRegisterR(regCon, x"0C", 0, r.streamCounter(0));
-      axiSlaveRegisterR(regCon, x"10", 0, r.streamCounter(1));
-      axiSlaveRegisterR(regCon, x"14", 0, r.streamCounter(2));
-      axiSlaveRegisterR(regCon, x"18", 0, r.streamCounter(3));
-      axiSlaveRegisterR(regCon, x"1C", 0, r.streamCounter(4));
-      axiSlaveRegisterR(regCon, x"20", 0, r.streamCounter(5));
-      axiSlaveRegisterR(regCon, x"24", 0, r.streamCounter(6));
-      axiSlaveRegisterR(regCon, x"28", 0, r.streamCounter(7));
+      axiSlaveRegisterR(regCon, x"0C", 0, r.streamCounter);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);

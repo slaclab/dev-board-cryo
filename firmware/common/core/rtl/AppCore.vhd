@@ -31,14 +31,15 @@ use work.AppCorePkg.all;
 
 architecture Stub of AppCore is
 
-   constant NUM_AXI_MASTERS_C : natural := 4;
+   constant NUM_AXI_MASTERS_C : natural := 5;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXIL_BASE_ADDR_G, 28, 24);  -- [0x8FFFFFFF:0x80000000]
 
-   constant AMC_INDEX_C : natural := 0;
-   constant DSP_INDEX_C : natural := 1;
-   constant RTM_INDEX_C : natural := 2;
-   constant REG_INDEX_C : natural := 3;
+   constant AMC_INDEX_C    : natural := 0;
+   constant DSP_INDEX_C    : natural := 1;
+   constant RTM_INDEX_C    : natural := 2;
+   constant REG_INDEX_C    : natural := 3;
+   constant STREAM_INDEX_C : natural := 4;
 
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -48,12 +49,12 @@ architecture Stub of AppCore is
    signal dacSigTrigArm   : sl;
    signal dacSigTrigDelay : slv(23 downto 0);
 
-   signal enableStreams      : slv(7 downto 0);
-   signal enableStreamsSync  : slv(7 downto 0);
-   signal trigStream         : slv(7 downto 0);
+   signal enableStreams      : sl;
+   signal enableStreamsSync  : sl;
+   signal trigStream         : sl;
 
-   signal streamCounter      : slv32Array(7 downto 0);
-   signal streamCounterRst   : slv(7 downto 0);
+   signal streamCounter      : slv(31 downto 0);
+   signal streamCounterRst   : sl;
 
    signal startRamp  : sl;
    signal selectRamp : sl;
@@ -106,7 +107,7 @@ begin
 
    RTM_SIM : entity work.RtmCryoSim
       generic map (
-         TPD_G           => TPD_G,
+         TPD_G            => TPD_G,
          AXI_BASE_ADDR_G  => AXI_CONFIG_C(RTM_INDEX_C).baseAddr)
       port map (
          -- JESD clock and reset
@@ -128,8 +129,9 @@ begin
    -- Local Registers
    ------------------   
    U_REG : entity work.AppCoreReg
-      generic map (
-         TPD_G            => TPD_G)
+      generic map ( 
+         TPD_G            => TPD_G,
+         AXI_BASE_ADDR_G  => AXI_CONFIG_C(REG_INDEX_C).baseAddr)
       port map (
          -- Configuration/Status
          dacSigTrigArm    => dacSigTrigArm,
@@ -145,10 +147,9 @@ begin
          axilWriteMaster  => axilWriteMasters(REG_INDEX_C),
          axilWriteSlave   => axilWriteSlaves(REG_INDEX_C));
 
-   Sync_enableStreams : entity work.SynchronizerVector
+   Sync_enableStreams : entity work.Synchronizer
    generic map (
-      TPD_G   => TPD_G,
-      WIDTH_G => 8)
+      TPD_G   => TPD_G)
    port map (
       clk     => jesdClk(0),
       dataIn  => enableStreams,
@@ -175,26 +176,46 @@ begin
    -----------------
    -- Trigger Module
    -----------------
-   U_GEN_STREAM : 
-   for i in 7 downto 0 generate
+  trigStream <= startRamp AND enableStreamsSync;
 
-      trigStream(i) <= startRamp AND enableStreamsSync(i);
+  U_Stream : entity work.DummyCryoStream
+     generic map (
+        TPD_G            => TPD_G,
+        AXI_BASE_ADDR_G  => AXI_CONFIG_C(STREAM_INDEX_C).baseAddr)
+     port map (
+        clk             => jesdClk(0),
+        rst             => jesdRst(0),
+        trig            => trigStream,
+        dataValid       => streamValid,
+        dataIndex       => streamIndex,
+        data            => streamData,
+        -- AXI-Lite Interface
+        axilClk         => axilClk,
+        axilRst         => axilRst,
+        axilReadMaster  => axilReadMasters(STREAM_INDEX_C),
+        axilReadSlave   => axilReadSlaves(STREAM_INDEX_C),
+        axilWriteMaster => axilWriteMasters(STREAM_INDEX_C),
+        axilWriteSlave  => axilWriteSlaves(STREAM_INDEX_C));
 
-      U_Stream : entity work.DummyCryoStream
-         generic map (
-            TPD_G      => TPD_G)
-         port map (
-            clk        => jesdClk(0),
-            rst        => jesdRst(0),
-            trig       => trigStream(i),
-            dataValid  => streamValid(i),
-            dataIndex  => streamIndex(i),
-            data       => streamData(i),
-            counter    => streamCounter(i),
-            counterRst => streamCounterRst(i));
-
-   end generate;
-
+   -- Counts the number of trigger pulses
+   U_SyncStatusVector : entity work.SynchronizerOneShotCnt
+      generic map (
+         TPD_G          => TPD_G,
+         OUT_POLARITY_G => '1',
+         CNT_RST_EDGE_G => true,
+         CNT_WIDTH_G    => 32)
+      port map (
+         -- Input Status bit Signals (wrClk domain)
+         dataIn     => trigStream,
+         -- Output Status bit Signals (rdClk domain)  
+         dataOut    => open,
+         -- Status Bit Counters Signals (rdClk domain) 
+         rollOverEn => '1',
+         cntRst     => streamCounterRst,
+         cntOut     => streamCounter,
+         -- Clocks and Reset Ports
+         wrClk      => jesdClk(0),
+         rdClk      => axilClk);
 
    U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
       generic map (
