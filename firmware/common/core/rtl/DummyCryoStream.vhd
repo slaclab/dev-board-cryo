@@ -38,9 +38,11 @@ entity DummyCryoStream is
       -- Trigger (Flux ramp reset)
       trig            : in  sl;
       -- SYSGEN Interface
-      dataValid       : out  slv(7 downto 0);
-      dataIndex       : out  Slv9Array(7 downto 0);
-      data            : out  Slv16Array(7 downto 0);
+      dataValid       : out  sl;
+      dataIndex       : out  slv(9 downto 0);
+      dataOut         : out  slv(63 downto 0);
+      -- timestamp (counter)
+      timestamp       : out slv(63 downto 0);
       -- AXI-Lite Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -54,9 +56,24 @@ end DummyCryoStream;
 
 architecture rtl of DummyCryoStream is
 
+   attribute dont_touch : string;
+   component ila_0
+      port (
+         clk    : in STD_LOGIC;
+         probe0 : in STD_LOGIC_VECTOR ( 0 to 0 );
+         probe1 : in STD_LOGIC_VECTOR ( 0 to 0 );
+         probe2 : in STD_LOGIC_VECTOR ( 9 downto 0 );
+         probe3 : in STD_LOGIC_VECTOR ( 9 downto 0 );
+         probe4 : in STD_LOGIC_VECTOR ( 63 downto 0 );
+         probe5 : in STD_LOGIC_VECTOR ( 63 downto 0 )
+      );
+   end component;
+   attribute dont_touch of ila_0 : component is "yes";
+
+
    constant NUM_AXI_MASTERS_C : natural := 8;
 
-   constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 16, 11);
+   constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 16, 10);
 
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -64,8 +81,8 @@ architecture rtl of DummyCryoStream is
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
 
-   constant SOF_CNT_C : slv(8 downto 0) := (others => '0');
-   constant EOF_CNT_C : slv(8 downto 0) := (others => '1');
+   constant SOF_CNT_C : slv(10 downto 0) := (others => '0');
+   constant EOF_CNT_C : slv(10 downto 0) := (others => '1');
 
    type StateType is (
       IDLE_S,
@@ -73,32 +90,43 @@ architecture rtl of DummyCryoStream is
 
    type RegType is record
       dataValid    : sl;
-      dataValidR1  : sl;
-      dataValidR2  : sl;
-      dataIndex    : slv(8 downto 0);
-      dataIndexR1  : slv(8 downto 0);
-      dataIndexR2  : slv(8 downto 0);
-      data         : Slv16Array(7 downto 0);
+      dataIndex    : slv(10 downto 0);
+      dataIndexR1  : slv(10 downto 0);
+      dataIndexR2  : slv(10 downto 0);
+      dataIndexR3  : slv(10 downto 0);
+      data         : slv(63 downto 0);
+      timestamp    : slv(63 downto 0);
       state        : StateType;
    end record;
 
    constant REG_INIT_C : RegType := (
       dataValid    => '0',
-      dataValidR1  => '0',
-      dataValidR2  => '0',
       dataIndex    => (others => '0'),
       dataIndexR1  => (others => '0'),
       dataIndexR2  => (others => '0'),
-      data         => (others => (others => '0')),
+      dataIndexR3  => (others => '0'),
+      data         => (others => '0'),
+      timestamp    => (others => '0'),
       state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
    signal ramAddr        : slv(8 downto 0);
-   signal ramData        : Slv16Array(7 downto 0);
+   signal ramData        : Slv32Array(7 downto 0);
+
 
 begin
+
+   DEBUG : ila_0
+      port map (
+         clk       => clk,
+         probe0(0) => trig,
+         probe1(0) => r.dataValid,
+         probe2    => r.dataIndexR3(10 downto 1),
+         probe3    => r.dataIndexR3(10 downto 1),
+         probe4    => r.data,
+         probe5    => r.timestamp);
 
    ---------------------
    -- AXI-Lite Crossbar
@@ -135,16 +163,16 @@ begin
             AXI_WR_EN_G      => true,
             SYS_WR_EN_G      => false,
             COMMON_CLK_G     => false,
-            ADDR_WIDTH_G     => 9,
-            DATA_WIDTH_G     => 16)
+            ADDR_WIDTH_G     => 8,
+            DATA_WIDTH_G     => 32)
          port map (
             -- Clock and Reset
             clk            => clk,
             rst            => rst,
             we             => '0',
-            addr           => r.dataIndex,
-            din            => x"0000",
-            dout           => data(i),
+            addr           => r.dataIndex(7 downto 0),
+            din            => x"00000000",
+            dout           => ramData(i),
             -- AXI-Lite Interface
             axiClk         => axilClk,
             axiRst         => axilRst,
@@ -156,18 +184,23 @@ begin
    end generate GEN_BRAM;
 
 
-   comb : process (r, rst, trig) is
-      variable v : RegType;
+   comb : process (r, rst, trig, ramData) is
+      variable v    : RegType;
+      variable idx  : natural range 0 to 7;
+      variable mod2 : sl;
+      variable data : slv(31 downto 0);
    begin
       -- Latch the current value
       v := r;
 
       -- BRAM has 2 CC delay
-      v.dataIndexR2 := v.dataIndexR1;
-      v.dataIndexR1 := v.dataIndex;
+      v.dataIndexR3 := r.dataIndexR2;
+      v.dataIndexR2 := r.dataIndexR1;
+      v.dataIndexR1 := r.dataIndex;
 
-      v.dataValidR2 := v.dataValidR1;
-      v.dataValidR1 := v.dataValid;
+      -- MUX from BRAM
+      idx           := to_integer(unsigned(r.dataIndexR2(10 downto 8)));
+      data          := ramData(idx); 
 
       -- State Machine
       case (r.state) is
@@ -177,17 +210,25 @@ begin
             v.dataIndex := (others => '0');
             if (trig = '1') then
                v.state     := DATA_S;
-               v.dataValid := '1';
+               v.timestamp := r.timestamp + 1;
             end if;
          ----------------------------------------------------------------------
          when DATA_S =>
             v.dataIndex := r.dataIndex + 1;
             if ( r.dataIndex = EOF_CNT_C ) then
                v.state     := IDLE_S;
-               v.dataValid := '0';
             end if;
          ----------------------------------------------------------------------
-         end case;
+      end case;
+
+      case r.dataIndexR2(0) is
+         when '0' =>
+            v.data(31 downto 0)  := data;
+            v.dataValid := '0';
+         when '1' =>
+            v.data(63 downto 32) := data;
+            v.dataValid := '1';
+      end case;
 
       -- Synchronous Reset
       if (rst = '1') then
@@ -198,8 +239,10 @@ begin
       rin       <= v;
 
       -- Outputs
-      dataIndex     <= (others => r.dataIndexR2);
-      dataValid     <= (others => r.dataValidR2);
+      dataIndex     <= r.dataIndexR3(10 downto 1);
+      dataValid     <= r.dataValid;
+      dataOut       <= r.data;
+      timestamp     <= r.timestamp;
    end process comb;
 
    seq : process (clk) is

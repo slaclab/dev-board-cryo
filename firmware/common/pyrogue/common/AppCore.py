@@ -34,7 +34,7 @@ class StreamData(pr.Device):
            self.add(pr.RemoteVariable(
                name         = f'StreamData[{i}]',
                description  = "Dummy stream data",
-               offset       = 0x000000 + i*0x4,
+               offset       = 0x000000 + i*0x2,
                bitSize      = 16,
                bitOffset    = 0,
                base         = pr.Int,

@@ -52,7 +52,7 @@ AMCc:
         RtmCryoDet:
           LowCycle: 0x02
           HighCycle: 0x02
-          FluxRampRateHz: 0x3E8 # 1kHz
+          FluxRampRateHz: 1000 # 1kHz
           PulseWidth: 0x100
           EnableRampTrigger: 0x1
       DaqMuxV2:

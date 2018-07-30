@@ -51,11 +51,11 @@ entity AxisSysgenProcDataFramer is
       timingRst       : in  sl;
       timingTimestamp : in  slv(63 downto 0);
       -- Input Data Interface (jesdClk domain)
-      jesdClk         : in  slv(7 downto 0);
-      jesdRst         : in  slv(7 downto 0);
-      dataValid       : in  slv(7 downto 0);
-      dataIndex       : in  Slv9Array(7 downto 0);
-      data            : in  Slv16Array(7 downto 0);
+      jesdClk         : in  sl;
+      jesdRst         : in  sl;
+      dataValid       : in  sl;
+      dataIndex       : in  slv(9 downto 0);
+      data            : in  slv(63 downto 0);
       -- Output AXIS Interface (axisClk domain)
       axisClk         : in  sl;
       axisRst         : in  sl;
@@ -65,19 +65,16 @@ end AxisSysgenProcDataFramer;
 
 architecture mapping of AxisSysgenProcDataFramer is
 
-   signal timestamp : Slv64Array(7 downto 0);
+   signal timestamp : slv(63 downto 0);
 
-   signal wrEn   : slv(7 downto 0);
-   signal wrData : Slv89Array(7 downto 0);
+   signal wrEn   : sl;
+   signal wrData : slv(137 downto 0);
 
-   signal rdReady : slv(7 downto 0);
-   signal rdValid : slv(7 downto 0);
-   signal rdData  : Slv89Array(7 downto 0);
+   signal rdReady : sl;
+   signal rdValid : sl;
+   signal rdData  : slv(137 downto 0);
 
 begin
-
-   GEN_VEC :
-   for i in 7 downto 0 generate
 
       U_SyncTimestamp : entity work.SynchronizerFifo
          generic map (
@@ -90,46 +87,44 @@ begin
             wr_clk => timingClk,
             din    => timingTimestamp,
             -- Read Ports (rd_clk domain)
-            rd_clk => jesdClk(i),
-            dout   => timestamp(i));
+            rd_clk => jesdClk,
+            dout   => timestamp);
 
       U_WrFsm : entity work.AxisSysgenProcDataFramerWrFsm
          generic map (
             TPD_G => TPD_G)
          port map (
             -- Clock and Reset
-            clk       => jesdClk(i),
-            rst       => jesdRst(i),
+            clk       => jesdClk,
+            rst       => jesdRst,
             -- SYSGEN Interface
-            dataValid => dataValid(i),
-            dataIndex => dataIndex(i),
-            data      => data(i),
+            dataValid => dataValid,
+            dataIndex => dataIndex,
+            data      => data,
             -- Timing Interface
-            timestamp => timestamp(i),
+            timestamp => timestamp,
             -- FIFO Interface
-            wrEn      => wrEn(i),
-            wrData    => wrData(i));
+            wrEn      => wrEn,
+            wrData    => wrData);
 
       U_SyncData : entity work.SynchronizerFifo
          generic map (
             TPD_G        => TPD_G,
             BRAM_EN_G    => true,
-            ADDR_WIDTH_G => 10,         -- Buffering up to two full frames
-            DATA_WIDTH_G => 89)
+            ADDR_WIDTH_G => 14,         -- Buffering up to two full frames
+            DATA_WIDTH_G => 138)
          port map (
             -- Asynchronous Reset
-            rst    => jesdRst(i),
+            rst    => jesdRst,
             -- Write Ports (wr_clk domain)
-            wr_clk => jesdClk(i),
-            wr_en  => wrEn(i),
-            din    => wrData(i),
+            wr_clk => jesdClk,
+            wr_en  => wrEn,
+            din    => wrData,
             -- Read Ports (rd_clk domain)
             rd_clk => axisClk,
-            rd_en  => rdReady(i),
-            valid  => rdValid(i),
-            dout   => rdData(i));
-
-   end generate GEN_VEC;
+            rd_en  => rdReady,
+            valid  => rdValid,
+            dout   => rdData);
 
    -----------------
    -- FIFO Read FSM

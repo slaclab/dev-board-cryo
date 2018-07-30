@@ -33,7 +33,7 @@ package body AppCoreConfigPkg is
       variable config : AppCoreConfigType := APP_CORE_CONFIG_DFLT_C;
    begin
 
-      config.ipAddress        := x"6C03000A";      -- 10.0.3.108 (ETH only);
+      config.ipAddress        := x"6B03000A";      -- 10.0.3.107 (ETH only);
       config.useXvcJtagBridge := false;           -- use JTAG cable
       -- Signal generator setup
       config.sigGenAddrWidth  := (others => 13);

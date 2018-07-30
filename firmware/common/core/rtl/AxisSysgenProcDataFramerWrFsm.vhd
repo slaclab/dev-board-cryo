@@ -49,20 +49,20 @@ entity AxisSysgenProcDataFramerWrFsm is
       rst       : in  sl;
       -- SYSGEN Interface
       dataValid : in  sl;
-      dataIndex : in  slv(8 downto 0);
-      data      : in  slv(15 downto 0);
+      dataIndex : in  slv(9 downto 0);
+      data      : in  slv(63 downto 0);
       -- Timing Interface
       timestamp : in  slv(63 downto 0);
       -- FIFO Interface
       wrEn      : out sl;
-      wrData    : out slv(88 downto 0));
+      wrData    : out slv(137 downto 0));
 end AxisSysgenProcDataFramerWrFsm;
 
 architecture rtl of AxisSysgenProcDataFramerWrFsm is
 
    type RegType is record
       wrEn   : sl;
-      wrData : slv(88 downto 0);
+      wrData : slv(137 downto 0);
    end record;
 
    constant REG_INIT_C : RegType := (
@@ -89,14 +89,14 @@ begin
          -- Set the flag
          v.wrEn                 := '1';
          -- Latch the data
-         v.wrData(15 downto 0)  := data;
+         v.wrData(63 downto 0)  := data;
          -- Check for SOF
          if (dataIndex = 0) then
             -- Latch the timestamp value
-            v.wrData(79 downto 16) := timestamp;
+            v.wrData(127 downto 64) := timestamp;
          end if;
          -- Update the index
-         v.wrData(88 downto 80) := dataIndex;
+         v.wrData(137 downto 128) := dataIndex;
       end if;
 
       -- Synchronous Reset

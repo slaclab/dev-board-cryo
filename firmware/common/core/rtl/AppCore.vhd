@@ -66,9 +66,13 @@ architecture Stub of AppCore is
    signal jesdRstVec : slv(7 downto 0) := (others => '0');
 
 
-   signal streamValid : slv(7 downto 0)  := (others => '0');
-   signal streamIndex : Slv9Array(7 downto 0);
-   signal streamData  : Slv16Array(7 downto 0);
+   signal streamValid : sl := '0';
+   signal streamIndex : slv(9 downto 0);
+   signal streamData  : slv(63 downto 0);
+
+   signal timingClk_s : sl;
+   signal timingRst_s : sl;
+   signal timestamp_s : slv(63 downto 0);
 
 begin
    ---------------------
@@ -188,7 +192,8 @@ begin
         trig            => trigStream,
         dataValid       => streamValid,
         dataIndex       => streamIndex,
-        data            => streamData,
+        dataOut         => streamData,
+        timestamp       => timestamp_s,
         -- AXI-Lite Interface
         axilClk         => axilClk,
         axilRst         => axilRst,
@@ -196,6 +201,9 @@ begin
         axilReadSlave   => axilReadSlaves(STREAM_INDEX_C),
         axilWriteMaster => axilWriteMasters(STREAM_INDEX_C),
         axilWriteSlave  => axilWriteSlaves(STREAM_INDEX_C));
+
+   timingClk_s <= jesdClk(0);
+   timingRst_s <= jesdRst(0);
 
    -- Counts the number of trigger pulses
    U_SyncStatusVector : entity work.SynchronizerOneShotCnt
@@ -222,12 +230,15 @@ begin
          TPD_G       => TPD_G)
       port map (
          -- Input timing interface (timingClk domain)
-         timingClk       => timingClk,
-         timingRst       => timingRst,
-         timingTimestamp => timingBus.message.timestamp,
+         --timingClk       => timingClk,
+         --timingRst       => timingRst,
+         --timingTimestamp => timingBus.message.timestamp,
+         timingClk       => timingClk_s,
+         timingRst       => timingRst_s,
+         timingTimestamp => timestamp_s,
          -- Input Data Interface (jesdClk domain)
-         jesdClk         => jesdClkVec,
-         jesdRst         => jesdRstVec,
+         jesdClk         => jesdClk(0),
+         jesdRst         => jesdRst(0),
          dataValid       => streamValid,
          dataIndex       => streamIndex,
          data            => streamData,

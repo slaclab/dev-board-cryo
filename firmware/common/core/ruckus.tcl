@@ -6,6 +6,7 @@ loadSource -dir  "$::DIR_PATH/rtl/"
 
 # ILA DCP
 loadSource -path "$::DIR_PATH/dcp/ila_0.dcp"
+loadSource -path "$::DIR_PATH/dcp/ila_1.dcp"
 
 # Load Simulation
 loadSource -sim_only -dir "$::DIR_PATH/tb/"

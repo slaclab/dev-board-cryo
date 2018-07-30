@@ -52,9 +52,9 @@ entity AxisSysgenProcDataFramerRdFsm is
       clk        : in  sl;
       rst        : in  sl;
       -- FIFO Interface
-      rdReady    : out slv(7 downto 0);
-      rdValid    : in  slv(7 downto 0);
-      rdData     : in  Slv89Array(7 downto 0);
+      rdReady    : out sl;
+      rdValid    : in  sl;
+      rdData     : in  slv(137 downto 0);
       -- AXI Stream Interface
       axisMaster : out AxiStreamMasterType;
       axisSlave  : in  AxiStreamSlaveType);
@@ -63,23 +63,27 @@ end AxisSysgenProcDataFramerRdFsm;
 architecture mapping of AxisSysgenProcDataFramerRdFsm is
 
    attribute dont_touch : string;
-   component ila_0
+   component ila_1
       port (
          clk    : in STD_LOGIC;
          probe0 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe1 : in STD_LOGIC_VECTOR ( 11 downto 0 );
-         probe2 : in STD_LOGIC_VECTOR ( 8 downto 0 );
-         probe3 : in STD_LOGIC_VECTOR ( 15 downto 0 );
-         probe4 : in STD_LOGIC_VECTOR ( 63 downto 0 )
+         probe1 : in STD_LOGIC_VECTOR ( 0 to 0 );
+         probe2 : in STD_LOGIC_VECTOR ( 0 to 0 );
+         probe3 : in STD_LOGIC_VECTOR ( 1 downto 0 );
+         probe4 : in STD_LOGIC_VECTOR ( 9 downto 0 );
+         probe5 : in STD_LOGIC_VECTOR ( 9 downto 0 );
+         probe6 : in STD_LOGIC_VECTOR ( 63 downto 0 );
+         probe7 : in STD_LOGIC_VECTOR ( 63 downto 0 );
+         probe8 : in STD_LOGIC_VECTOR ( 63 downto 0 )
       );
    end component;
-   attribute dont_touch of ila_0 : component is "yes";
+   attribute dont_touch of ila_1 : component is "yes";
 
    constant AXI_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(8, TKEEP_COMP_C, TUSER_FIRST_LAST_C, 8);  -- 64-bit AXIS interface
 
    constant VERSION_C : slv(7 downto 0) := (others => '0');
-   constant SOF_CNT_C : slv(11 downto 0) := (others => '0');
-   constant EOF_CNT_C : slv(11 downto 0) := (others => '1');
+   constant SOF_CNT_C : slv(9 downto 0) := (others => '0');
+   constant EOF_CNT_C : slv(9 downto 0) := (others => '1');
 
    type StateType is (
       IDLE_S,
@@ -88,25 +92,19 @@ architecture mapping of AxisSysgenProcDataFramerRdFsm is
       PAYLOAD_S);
 
    type RegType is record
-      acks       : slv(7 downto 0);
-      ackNum     : slv(2 downto 0);
-      valid      : sl;
       eofe       : sl;
-      rdReady    : slv(7 downto 0);
-      eventId    : Slv48Array(7 downto 0);
+      rdReady    : sl;
+      eventId    : slv(47 downto 0);
       timestamp  : slv(63 downto 0);
-      cnt        : slv(11 downto 0);
+      cnt        : slv(9 downto 0);
       axisMaster : AxiStreamMasterType;
       state      : StateType;
    end record;
 
    constant REG_INIT_C : RegType := (
-      acks   => (others => '0'),
-      ackNum => (others => '0'),
-      valid  => '0',
       eofe       => '0',
-      rdReady    => (others => '0'),
-      eventId    => (others => (others => '0')),
+      rdReady    => '0',
+      eventId    => (others => '0'),
       timestamp  => (others => '0'),
       cnt        => (others => '0'),
       axisMaster => AXI_STREAM_MASTER_INIT_C,
@@ -115,51 +113,57 @@ architecture mapping of AxisSysgenProcDataFramerRdFsm is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal index       : natural range 0 to 7;
-
    signal eofe        : sl;
-   signal count       : slv(11 downto 0);
-   signal countIn     : slv(8 downto 0);
-   signal dataIn      : slv(15 downto 0);
+   signal tValid      : sl;
+   signal rValid      : sl;
+   signal r_count     : slv(9 downto 0);
+   signal dataIn      : slv(63 downto 0);
+   signal r_timestamp : slv(63 downto 0);
    signal timestampIn : slv(63 downto 0);
+   signal countIn     : slv(9 downto 0);
+   signal state       : slv(1 downto 0);
 
 begin
 
-   index       <= to_integer(unsigned(r.cnt(11 downto 9)));
-
    eofe        <= r.eofe;
-   count       <= r.cnt;
-   countIn     <= rdData(index)(88 downto 80);
-   dataIn      <= rdData(index)(15 downto 0);
-   timestampIn <= rdData(index)(79 downto 16);
+   tValid      <= r.axisMaster.tValid;
+   r_count     <= r.cnt;
+   rValid      <= rdValid;
+   dataIn      <= rdData(63 downto 0);
+   countIn     <= rdData(137 downto 128);
+   timestampIn <= rdData(127 downto 64);
+   r_timestamp <= r.timestamp;
+   state       <= "00" when r.state = IDLE_S else
+                  "01" when r.state = HDR0_S else
+                  "10" when r.state = HDR1_S else
+                  "11";
 
-   DEBUG : ila_0
+   DEBUG : ila_1
       port map (
          clk       => clk,
          probe0(0) => eofe,
-         probe1    => count,
-         probe2    => countIn,
-         probe3    => dataIn,
-         probe4    => timestampin);
+         probe1(0) => tValid,
+         probe2(0) => rValid,
+         probe3    => state,
+         probe4    => r_count,
+         probe5    => countIn,
+         probe6    => dataIn,
+         probe7    => r_timestamp,
+         probe8    => timestampin);
 
 
    comb : process (axisSlave, r, rdData, rdValid, rst) is
       variable v         : RegType;
       variable i         : natural;
-      variable request   : sl;
-      variable data      : Slv16Array(7 downto 0);
-      variable timestamp : Slv64Array(7 downto 0);
-      variable dataIndex : Slv9Array(7 downto 0);
-      variable idx       : natural range 0 to 7;
+      variable data      : slv(63 downto 0);
+      variable timestamp : slv(63 downto 0);
+      variable dataIndex : slv(9 downto 0);
    begin
       -- Latch the current value
       v   := r;
 
-      idx := to_integer(unsigned(r.cnt(11 downto 9)));
-
       -- Reset strobes
-      v.rdReady := (others => '0');
-      request   := '0';
+      v.rdReady := '0';
       if axisSlave.tReady = '1' then
          v.axisMaster.tValid := '0';
          v.axisMaster.tLast  := '0';
@@ -167,11 +171,9 @@ begin
       end if;
 
       -- Map the FIFO output to variables
-      for i in 7 downto 0 loop
-         data(i)      := rdData(i)(15 downto 0);
-         timestamp(i) := rdData(i)(79 downto 16);
-         dataIndex(i) := rdData(i)(88 downto 80);
-      end loop;
+      data      := rdData(63 downto 0);
+      timestamp := rdData(127 downto 64);
+      dataIndex := rdData(137 downto 128);
 
       -- State Machine
       case (r.state) is
@@ -181,26 +183,17 @@ begin
             v.eofe := '0';
             -- Reset the counters
             v.cnt  := (others => '0');
-            -- Format request
-            for i in 7 downto 0 loop
-               -- Check for valid
-               if (rdValid(i) = '1') then
-                  -- Check for SOF
-                  if (dataIndex(i) = SOF_CNT_C(8 downto 0)) then
-                     request := '1';
-                  else
-                     -- Blowoff the data because not aligned
-                     v.rdReady(i) := '1';
-                  end if;
+            -- Check for valid
+            if (rdValid = '1') then
+               -- Check for SOF
+               if (dataIndex = SOF_CNT_C) then
+                  v.state   := HDR0_S;
+               else
+                  -- Blowoff the data because not aligned
+                  v.rdReady := '1';
                end if;
-            end loop;
-
-            v.valid := request;
-
-            if (v.valid = '1') then
-               -- Next state
-               v.state := HDR0_S;
             end if;
+
          ----------------------------------------------------------------------
          when HDR0_S =>
             -- Check if ready to move data
@@ -208,16 +201,16 @@ begin
                -- Move data
                v.axisMaster.tValid              := '1';
                v.axisMaster.tData(7 downto 0)   := VERSION_C;  -- Version = 0x0
-               v.axisMaster.tData(15 downto 8)  := toSlv(idx, 8);  -- Channel Index
-               v.axisMaster.tData(63 downto 16) := r.eventId(idx);  -- Event ID
+               v.axisMaster.tData(15 downto 8)  := (others => '0');  -- Channel Index
+               v.axisMaster.tData(63 downto 16) := r.eventId;  -- Event ID
                -- Set the tDest field
-               v.axisMaster.tDest               := TDEST_G(idx);
+               v.axisMaster.tDest               := TDEST_G(0);
                -- Set SOF bit
                ssiSetUserSof(AXI_CONFIG_C, v.axisMaster, '1');
                -- Latch the timestamp
-               v.timestamp                      := timestamp(idx);
+               v.timestamp                      := timestamp;
                -- Increment the counter
-               v.eventId(idx)                 := r.eventId(idx) + 1;
+               v.eventId                        := r.eventId + 1;
                -- Next state
                v.state                          := HDR1_S;
             end if;
@@ -234,31 +227,19 @@ begin
          ----------------------------------------------------------------------
          when PAYLOAD_S =>
             -- Check if ready to move data, cycle through all 8
-            if (v.axisMaster.tValid = '0') and (rdValid(idx) = '1') then
+            if (v.axisMaster.tValid = '0') and (rdValid = '1') then
                -- Accept the data
-               v.rdReady(idx)   := '1';
+               v.rdReady   := '1';
                -- Increment the counter
-               v.cnt            := r.cnt + 1;
+               v.cnt       := r.cnt + 1;
 
                -- Pack/move the data
-               case r.cnt(1 downto 0) is
-                  when "00" =>
-                     v.axisMaster.tValid              := '0';
-                     v.axisMaster.tData(15 downto 0)  := data(idx);
-                  when "01" =>
-                     v.axisMaster.tValid              := '0';
-                     v.axisMaster.tData(31 downto 16) := data(idx);
-                  when "10" =>
-                     v.axisMaster.tValid              := '0';
-                     v.axisMaster.tData(47 downto 32) := data(idx);
-                  when "11" =>
-                     v.axisMaster.tValid              := '1';
-                     v.axisMaster.tData(63 downto 48) := data(idx);
-               end case;
+               v.axisMaster.tValid             := '1';
+               v.axisMaster.tData(63 downto 0) := data;
 
                -- Error checking (probably due to FIFO overflow)
-               if (r.cnt(8 downto 0) /= dataIndex(idx))              -- Check for misalignment in sequence counter
-                            or (r.timestamp /= timestamp(idx)) then  -- Check for misalignment in timestamp
+               if (r.cnt /= dataIndex)              -- Check for misalignment in sequence counter
+                            or (r.timestamp /= timestamp) then  -- Check for misalignment in timestamp
                   -- Set error flag
                   v.eofe := '1';
                end if;
