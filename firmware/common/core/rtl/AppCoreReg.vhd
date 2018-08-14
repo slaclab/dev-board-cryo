@@ -35,6 +35,8 @@ entity AppCoreReg is
       enableStreams   : out sl;
       streamCounter   : in  slv(31 downto 0);
       streamCounterRst: out sl;
+      eofeCounter     : in  slv(31 downto 0);
+      eofeCounterRst  : out sl;
       -- AXI-Lite Register Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -52,6 +54,8 @@ architecture rtl of AppCoreReg is
       enableStreams   : sl;
       streamCounter   : slv(31 downto 0);
       streamCounterRst: sl;
+      eofeCounter     : slv(31 downto 0);
+      eofeCounterRst  : sl;
       axilReadSlave   : AxiLiteReadSlaveType;
       axilWriteSlave  : AxiLiteWriteSlaveType;
    end record;
@@ -62,21 +66,20 @@ architecture rtl of AppCoreReg is
       enableStreams   => '1',
       streamCounter   => (others => '0'),
       streamCounterRst=> '0',
+      eofeCounter     => (others => '0'),
+      eofeCounterRst  => '0',
       axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal counterSync : slv(31 downto 0);
-
 begin
 
-   counterSync <= streamCounter;
    --------------------- 
    -- AXI Lite Interface
    --------------------- 
-   comb : process (axilReadMaster, axilRst, axilWriteMaster, r, counterSync) is
+   comb : process (axilReadMaster, axilRst, axilWriteMaster, r, streamCounter, eofeCounter) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -86,7 +89,8 @@ begin
       -- Reset strobes
       v.dacSigTrigArm := '0';
 
-      v.streamCounter := counterSync;
+      v.streamCounter := streamCounter;
+      v.eofeCounter   := eofeCounter;
 
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -96,7 +100,9 @@ begin
       axiSlaveRegister(regCon, x"04", 0, v.dacSigTrigArm);
       axiSlaveRegister(regCon, x"08", 0, v.enableStreams);
       axiSlaveRegister(regCon, x"08", 8, v.streamCounterRst);
+      axiSlaveRegister(regCon, x"08", 9, v.eofeCounterRst);
       axiSlaveRegisterR(regCon, x"0C", 0, r.streamCounter);
+      axiSlaveRegisterR(regCon, x"10", 0, r.eofeCounter);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
@@ -116,6 +122,7 @@ begin
       dacSigTrigArm   <= r.dacSigTrigArm;
       enableStreams   <= r.enableStreams;
       streamCounterRst<= r.streamCounterRst;
+      eofeCounterRst  <= r.eofeCounterRst;
 
    end process comb;
 

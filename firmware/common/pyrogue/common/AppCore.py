@@ -70,9 +70,30 @@ class StreamControl(pr.Device):
         ))
 
         self.add(pr.RemoteVariable(
+            name         = "EofeCounterRst",
+            description  = "Reset stream EOFE",
+            offset       = 0x00000008,
+            bitSize      = 1,
+            bitOffset    = 9,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+        self.add(pr.RemoteVariable(
             name         = "StreamCounter",
-            description  = "EnableStream",
+            description  = "Count number of stream triggers",
             offset       = 0x0000000C,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "EofeCounter",
+            description  = "Stream EOFE counter",
+            offset       = 0x00000010,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,

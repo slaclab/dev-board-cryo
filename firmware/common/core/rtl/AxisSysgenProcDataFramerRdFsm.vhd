@@ -55,29 +55,14 @@ entity AxisSysgenProcDataFramerRdFsm is
       rdReady    : out sl;
       rdValid    : in  sl;
       rdData     : in  slv(137 downto 0);
+      -- 
+      eofe       : out sl;
       -- AXI Stream Interface
       axisMaster : out AxiStreamMasterType;
       axisSlave  : in  AxiStreamSlaveType);
 end AxisSysgenProcDataFramerRdFsm;
 
 architecture mapping of AxisSysgenProcDataFramerRdFsm is
-
-   attribute dont_touch : string;
-   component ila_1
-      port (
-         clk    : in STD_LOGIC;
-         probe0 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe1 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe2 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe3 : in STD_LOGIC_VECTOR ( 1 downto 0 );
-         probe4 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-         probe5 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-         probe6 : in STD_LOGIC_VECTOR ( 63 downto 0 );
-         probe7 : in STD_LOGIC_VECTOR ( 63 downto 0 );
-         probe8 : in STD_LOGIC_VECTOR ( 63 downto 0 )
-      );
-   end component;
-   attribute dont_touch of ila_1 : component is "yes";
 
    constant AXI_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(8, TKEEP_COMP_C, TUSER_FIRST_LAST_C, 8);  -- 64-bit AXIS interface
 
@@ -113,44 +98,7 @@ architecture mapping of AxisSysgenProcDataFramerRdFsm is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal eofe        : sl;
-   signal tValid      : sl;
-   signal rValid      : sl;
-   signal r_count     : slv(9 downto 0);
-   signal dataIn      : slv(63 downto 0);
-   signal r_timestamp : slv(63 downto 0);
-   signal timestampIn : slv(63 downto 0);
-   signal countIn     : slv(9 downto 0);
-   signal state       : slv(1 downto 0);
-
 begin
-
-   eofe        <= r.eofe;
-   tValid      <= r.axisMaster.tValid;
-   r_count     <= r.cnt;
-   rValid      <= rdValid;
-   dataIn      <= rdData(63 downto 0);
-   countIn     <= rdData(137 downto 128);
-   timestampIn <= rdData(127 downto 64);
-   r_timestamp <= r.timestamp;
-   state       <= "00" when r.state = IDLE_S else
-                  "01" when r.state = HDR0_S else
-                  "10" when r.state = HDR1_S else
-                  "11";
-
-   DEBUG : ila_1
-      port map (
-         clk       => clk,
-         probe0(0) => eofe,
-         probe1(0) => tValid,
-         probe2(0) => rValid,
-         probe3    => state,
-         probe4    => r_count,
-         probe5    => countIn,
-         probe6    => dataIn,
-         probe7    => r_timestamp,
-         probe8    => timestampin);
-
 
    comb : process (axisSlave, r, rdData, rdValid, rst) is
       variable v         : RegType;
@@ -269,6 +217,7 @@ begin
 
       -- Registered Outputs
       axisMaster <= r.axisMaster;
+      eofe       <= r.eofe;
 
    end process comb;
 

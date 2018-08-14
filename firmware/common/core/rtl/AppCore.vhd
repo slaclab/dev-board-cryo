@@ -53,8 +53,8 @@ architecture Stub of AppCore is
    signal enableStreamsSync  : sl;
    signal trigStream         : sl;
 
-   signal streamCounter      : slv(31 downto 0);
-   signal streamCounterRst   : sl;
+   signal streamCounter      : slv(31 downto 0) := (others => '0');
+   signal streamCounterRst   : sl               := '0';
 
    signal startRamp  : sl;
    signal selectRamp : sl;
@@ -74,6 +74,9 @@ architecture Stub of AppCore is
    signal timingRst_s : sl;
    signal timestamp_s : slv(63 downto 0);
 
+   signal eofe           : sl               := '0';
+   signal eofeCounterRst : sl               := '0';
+   signal eofeCounter    : slv(31 downto 0) := (others => '0');
 begin
    ---------------------
    -- AXI-Lite Crossbar
@@ -143,6 +146,8 @@ begin
          enableStreams    => enableStreams,
          streamCounter    => streamCounter,
          streamCounterRst => streamCounterRst,
+         eofeCounter      => eofeCounter,
+         eofeCounterRst   => eofeCounterRst,
          -- AXI-Lite Interface
          axilClk          => axilClk,
          axilRst          => axilRst,
@@ -225,6 +230,26 @@ begin
          wrClk      => jesdClk(0),
          rdClk      => axilClk);
 
+   -- Counts the number of stream EOFE
+   U_SyncEofeVector : entity work.SynchronizerOneShotCnt
+      generic map (
+         TPD_G          => TPD_G,
+         OUT_POLARITY_G => '1',
+         CNT_RST_EDGE_G => true,
+         CNT_WIDTH_G    => 32)
+      port map (
+         -- Input Status bit Signals (wrClk domain)
+         dataIn     => eofe,
+         -- Output Status bit Signals (rdClk domain)  
+         dataOut    => open,
+         -- Status Bit Counters Signals (rdClk domain) 
+         rollOverEn => '1',
+         cntRst     => eofeCounterRst,
+         cntOut     => eofeCounter,
+         -- Clocks and Reset Ports
+         wrClk      => jesdClk(0),
+         rdClk      => axilClk);
+
    U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
       generic map (
          TPD_G       => TPD_G)
@@ -243,6 +268,7 @@ begin
          dataIndex       => streamIndex,
          data            => streamData,
          -- Output AXIS Interface (axisClk domain)
+         eofe            => eofe,
          axisClk         => axilClk,
          axisRst         => axilRst,
          axisMaster      => obAxisMasters(APP_DEBUG_STRM_C),

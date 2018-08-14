@@ -57,6 +57,7 @@ entity AxisSysgenProcDataFramer is
       dataIndex       : in  slv(9 downto 0);
       data            : in  slv(63 downto 0);
       -- Output AXIS Interface (axisClk domain)
+      eofe            : out sl;
       axisClk         : in  sl;
       axisRst         : in  sl;
       axisMaster      : out AxiStreamMasterType;
@@ -141,6 +142,7 @@ begin
          rdReady    => rdReady,
          rdValid    => rdValid,
          rdData     => rdData,
+         eofe       => eofe,
          -- AXI Stream Interface
          axisMaster => axisMaster,
          axisSlave  => axisSlave);
