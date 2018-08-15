@@ -45,12 +45,14 @@ SD card.  SW15.1 (MSB) ... SW15.4 (LSB) select which bitfile is loaded.
 
 The SD card has the following structure
 
+```
 /media/SDCARD/
 |-- Xilinx.sys
 `-- xilinx
     `-- cfg0
         |-- config.def
         `-- image.bit
+```
 
 Where Xilinx.sys points to the cfgaddr folders
 
