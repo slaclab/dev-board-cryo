@@ -55,6 +55,10 @@ AMCc:
           FluxRampRateHz: 1000 # 1kHz
           PulseWidth: 0x100
           EnableRampTrigger: 0x1
+        StreamControl:
+          EnableStreams: 0x1
+        StreamReg:
+          StreamData[:]: 0x0
       DaqMuxV2:
         DecimationAveraging: 'Disabled'
         InputMuxSel[0]: 'Ch7'
