@@ -23,7 +23,7 @@ class FpgaTopLevel(app.TopLevel):
     def __init__( self, 
         simGui          = False,
         commType        = "pcie-rssi-interleaved",
-        ipAddr          = "10.0.3.107",
+        ipAddr          = "192.168.2.10",
         pcieRssiLink    = 5,
     ):
         super().__init__(
