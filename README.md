@@ -38,6 +38,52 @@ Most of the important features of the *Common Platform* are available:
    (`FanController/Bypass: 1`). The controller is also overridden if the
    SysMon detects a temperature alarm condition (85degC).
 
+### Booting from SD card
+The KCU105 can load a bit file from the SD card (UG917, page 14).  Set 
+SW15.5 and SW15.6 to the on position to enable loading bit file from
+SD card.  SW15.1 (MSB) ... SW15.4 (LSB) select which bitfile is loaded.
+
+The SD card has the following structure
+
+/media/SDCARD/
+|-- Xilinx.sys
+`-- xilinx
+    `-- cfg0
+        |-- config.def
+        `-- image.bit
+
+Where Xilinx.sys points to the cfgaddr folders
+
+```
+dir=xilinx;
+cfgaddr0=cfg0;
+cfgaddr1=cfg1;
+cfgaddr2=cfg2;
+cfgaddr3=cfg3;
+cfgaddr4=cfg4;
+cfgaddr5=cfg5;
+cfgaddr6=cfg6;
+cfgaddr7=cfg7;
+cfgaddr8=cfg8;
+cfgaddr9=cfg9;
+cfgaddr10=cfg10;
+cfgaddr11=cfg11;
+cfgaddr12=cfg12;
+cfgaddr13=cfg13;
+cfgaddr14=cfg14;
+cfgaddr15=cfg15;
+```
+
+And config.def defines JTAG boot parameters
+
+```
+revision = 1.0;
+bus = JTAG;
+clock_divider = 2;
+node = FPGA-mono, 6, image.bit, 13822093;
+cmd = 63, 5, 4, 11, 9, 12, 13;
+```
+
 ### Networking
 The firmware provides 10/100/1000 ethernet at the RJ45 jack as well as
 10G ethernet at the SFP0 bay (the one closer to the RJ-45).
