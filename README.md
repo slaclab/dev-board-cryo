@@ -161,7 +161,7 @@ since their voltage level is 1.8V only.
 
 ## Clone the GIT repository
 ```
-$ git clone --recursive git@github.com:/slaclab/dev-board-common-platform
+$ git clone --recursive git@github.com:/slaclab/dev-board-cryo
 ```
 
 Note that you need git LFS. If you are unfamiliar with the basic steps
