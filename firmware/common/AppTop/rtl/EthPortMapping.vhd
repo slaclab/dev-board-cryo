@@ -152,6 +152,10 @@ architecture mapping of EthPortMapping is
    constant AXIL_MASTER_CONFIG_C : AxiLiteCrossbarMasterConfigArray(N_AXIL_MASTERS_C - 1 downto 0) :=
       genAxiLiteConfig(N_AXIL_MASTERS_C, ETH_ADDR_C, 20, 16);
 
+
+   constant WINDOW_ADDR_SIZE_C : positive := ite(JUMBO_G, 5, 4);
+   constant MAX_SEG_SIZE_C     : positive := ite(JUMBO_G, 8192, 1024);
+
    signal axilReadMasters      : AxiLiteReadMasterArray (N_AXIL_MASTERS_C - 1 downto 0);
    signal axilReadSlaves       : AxiLiteReadSlaveArray  (N_AXIL_MASTERS_C - 1 downto 0) := (others => AXI_LITE_READ_SLAVE_EMPTY_DECERR_C);
    signal axilWriteMasters     : AxiLiteWriteMasterArray(N_AXIL_MASTERS_C - 1 downto 0);
@@ -246,8 +250,8 @@ begin
    U_RssiServer : entity work.RssiCoreWrapper
       generic map (
          TPD_G               => TPD_G,
-         MAX_SEG_SIZE_G      => 1024,
-         SEGMENT_ADDR_SIZE_G => 7,
+         MAX_SEG_SIZE_G      => MAX_SEG_SIZE_C,
+         SEGMENT_ADDR_SIZE_G => bitSize(MAX_SEG_SIZE_C/8),
          APP_ILEAVE_EN_G     => RSSI_ILEAVE_EN_C,
          APP_STREAMS_G       => RSSI_SIZE_C,
          APP_STREAM_ROUTES_G => RSSI_ROUTES_C,
@@ -255,8 +259,9 @@ begin
          TIMEOUT_UNIT_G      => 1.0E-3,  -- In units of seconds
          SERVER_G            => true,
          RETRANSMIT_ENABLE_G => true,
+         MAX_RETRANS_CNT_G   => 16,
          BYPASS_CHUNKER_G    => false,
-         WINDOW_ADDR_SIZE_G  => 3,
+         WINDOW_ADDR_SIZE_G  => WINDOW_ADDR_SIZE_C,
          PIPE_STAGES_G       => 1,
          APP_AXIS_CONFIG_G   => AXIS_CONFIG_C,
          TSP_AXIS_CONFIG_G   => EMAC_AXIS_CONFIG_C,
