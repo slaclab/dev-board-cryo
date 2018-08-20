@@ -153,7 +153,7 @@ architecture mapping of EthPortMapping is
       genAxiLiteConfig(N_AXIL_MASTERS_C, ETH_ADDR_C, 20, 16);
 
 
-   constant WINDOW_ADDR_SIZE_C : positive := ite(JUMBO_G, 5, 4);
+   constant WINDOW_ADDR_SIZE_C : positive := ite(JUMBO_G, 4, 4);
    constant MAX_SEG_SIZE_C     : positive := ite(JUMBO_G, 8192, 1024);
 
    signal axilReadMasters      : AxiLiteReadMasterArray (N_AXIL_MASTERS_C - 1 downto 0);
