@@ -61,7 +61,7 @@ class TopLevel(pr.Device):
 
         if (simGui):
             # Create simulation srp interface
-            srp=pyrogue.interfaces.simulation.MemEmulate()
+            self.srp=pyrogue.interfaces.simulation.MemEmulate()
         else:
         
             ################################################################################################################
@@ -81,7 +81,7 @@ class TopLevel(pr.Device):
             
                 # Connect the SRPv0 to RAW UDP
                 self.srp = rogue.protocols.srp.SrpV0()
-                pyrogue.streamConnectBiDir( srp, udp )           
+                pyrogue.streamConnectBiDir( self.srp, udp )
             
             elif ( commType=="eth-rssi-non-interleaved" ):
                 
@@ -93,7 +93,7 @@ class TopLevel(pr.Device):
 
                 # Connect the SRPv3 to tDest = 0x0
                 self.srp = rogue.protocols.srp.SrpV3()
-                pr.streamConnectBiDir( srp, rudp.application(dest=0x0) )
+                pr.streamConnectBiDir( self.srp, rudp.application(dest=0x0) )
 
                 # Create stream interface
                 self.stream = pr.protocols.UdpRssiPack( name='rudpData', host=ipAddr, port=8194, packVer = 1)       
@@ -108,14 +108,14 @@ class TopLevel(pr.Device):
                 
                 # Connect the SRPv3 to tDest = 0x0
                 self.srp = rogue.protocols.srp.SrpV3()
-                pr.streamConnectBiDir( srp, rudp.application(dest=0x0) )
+                pr.streamConnectBiDir( self.srp, rudp.application(dest=0x0) )
                 
             elif ( commType == 'pcie-fsbl' ):
 
                 # Connect the SRPv0 to tDest = 0x0
                 vc0Srp  = rogue.hardware.axi.AxiStreamDma(pcieDev,(pcieRssiLink*3)+0,1)
                 self.srp = rogue.protocols.srp.SrpV0()
-                pr.streamConnectBiDir( srp, vc0Srp )
+                pr.streamConnectBiDir( self.srp, vc0Srp )
 
             elif ( commType == 'pcie-rssi-interleaved' ):
 
