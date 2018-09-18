@@ -1,8 +1,28 @@
 AMCc: 
   FpgaTopLevel:
     AmcCarrierCore:
-#      AmcCarrierTiming:
-#        enable: False
+      AmcCarrierTiming:
+        TimingFrameRx:
+          ClkSel: 0x1 # Setup SMURF timing reference
+        EvrV2CoreTriggers:
+          EvrV2ChannelReg[0]:
+            Enable: 0x1
+            RateSel: 0x1000 # 1  kHz
+            RateSel: 0x0800 # 2  kHz
+#            RateSel: 0x0400 # 3  kHz
+#            RateSel: 0x0200 # 4  kHz
+#            RateSel: 0x0100 # 5  kHz
+#            RateSel: 0x0080 # 6  kHz
+#            RateSel: 0x0040 # 8  kHz
+#            RateSel: 0x0020 # 10 kHz
+#            RateSel: 0x0010 # 12 kHz
+#            RateSel: 0x0008 # 15 kHz
+          EvrV2TriggerReg[0]:
+            Enable: 0x1
+            Source: 0x0
+            Polarity: 0x1
+            Delay: 0x0
+            Width: 0x100
       AmcCarrierBsa:
         BsaWaveformEngine[0]:
           WaveformEngineBuffers:
@@ -61,14 +81,14 @@ AMCc:
           StreamData[:]: 0x0
       DaqMuxV2:
         DecimationAveraging: 'Disabled'
-        InputMuxSel[0]: 'Ch7'
-        InputMuxSel[1]: 'Ch6'
+        InputMuxSel[0]: 'Test'
+        InputMuxSel[1]: 'Test'
         DataBufferSize: 0x1000
         FormatDataWidth[:]: 'D16-bit'
         FormatSign[:]: 'Unsigned'
         DecimationAveraging[:]: 'Disabled'
         PacketHeaderEn: 'Disabled'
-        TriggerHwAutoRearm: Enabled
+        TriggerHwAutoRearm: 'Disabled'
       DacSigGen:
         EnableMask: 0x3   # Enable both channels
         ModeMask:   0x3   # Set both channels into 'Periodic Mode'
