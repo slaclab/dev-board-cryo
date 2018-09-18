@@ -22,6 +22,7 @@ import pyrogue as pr
 from LclsTimingCore.TimingFrameRx import *
 from LclsTimingCore.TPGMiniCore import *
 from LclsTimingCore.GthRxAlignCheck import *
+from LclsTimingCore.EvrV2CoreTriggers import *
 
 class DevBoardTiming(pr.Device):
     def __init__(   self, 
@@ -38,10 +39,15 @@ class DevBoardTiming(pr.Device):
             offset = 0x00000000,
         ))
 
-        self.add(TPGMiniCore(
-            offset = 0x00030000,
-        ))
+#        self.add(TPGMiniCore(
+#            offset = 0x00030000,
+#        ))
 
         self.add(GthRxAlignCheck(
             offset = 0x01000000,
-        ))        
+        ))
+
+        self.add(EvrV2CoreTriggers(
+            offset = 0x02000000,
+        ))
+

@@ -99,16 +99,16 @@ class IIC(pr.Device):
             mode        = "RW",
        ))
 
-        for i in range(256):
-            self.add(pr.RemoteVariable(
-                name        = f'Si570[{i}]',
-                description = " ",
-                offset      = 0x0400+0x4*i,
-                bitSize     = 32,
-                bitOffset   = 0,
-                base        = pr.UInt, 
-                mode        = "RW",
-           ))
+#        for i in range(256):
+#            self.add(pr.RemoteVariable(
+#                name        = f'Si570[{i}]',
+#                description = " ",
+#                offset      = 0x0400+0x4*i,
+#                bitSize     = 32,
+#                bitOffset   = 0,
+#                base        = pr.UInt,
+#                mode        = "RW",
+#           ))
 
         self.add(pr.RemoteVariable(
             name        = "Pca9544",
@@ -120,16 +120,16 @@ class IIC(pr.Device):
             mode        = "RW",
        ))
 
-        for i in range(256):
-            self.add(pr.RemoteVariable(
-                name        = f'SFP[{i}]',
-                description = " ",
-                offset      = 0x0C00 + 0x4*i,
-                bitSize     = 32,
-                bitOffset   = 0,
-                base        = pr.UInt, 
-                mode        = "RW",
-           ))
+#        for i in range(256):
+#            self.add(pr.RemoteVariable(
+#                name        = f'SFP[{i}]',
+#                description = " ",
+#                offset      = 0x0C00 + 0x4*i,
+#                bitSize     = 32,
+#                bitOffset   = 0,
+#                base        = pr.UInt,
+#                mode        = "RW",
+#           ))
 
         for i in range(256):
             self.add(pr.RemoteVariable(

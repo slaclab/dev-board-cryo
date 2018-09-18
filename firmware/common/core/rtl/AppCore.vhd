@@ -41,6 +41,11 @@ architecture Stub of AppCore is
    constant REG_INDEX_C    : natural := 3;
    constant STREAM_INDEX_C : natural := 4;
 
+   constant BSI_BUS_CONFIG_C : BsiBusType := (
+      slotNumber => x"07",
+      crateId    => x"0003",
+      macAddress => (others => (others => '0')));
+
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -56,9 +61,12 @@ architecture Stub of AppCore is
    signal streamCounter      : slv(31 downto 0) := (others => '0');
    signal streamCounterRst   : sl               := '0';
 
-   signal startRamp  : sl;
-   signal selectRamp : sl;
-   signal rampCnt    : slv(31 downto 0);
+   signal internalTrigSel     : sl;
+   signal internalTrigSelSync : sl;
+
+   signal startRamp    : sl;
+   signal selectRamp   : sl;
+   signal rampCnt      : slv(31 downto 0);
 
    signal s_dacValues  :  sampleDataVectorArray(1 downto 0, 9 downto 0);
 
@@ -70,13 +78,20 @@ architecture Stub of AppCore is
    signal streamIndex : slv(9 downto 0);
    signal streamData  : slv(63 downto 0);
 
-   signal timingClk_s : sl;
-   signal timingRst_s : sl;
    signal timestamp_s : slv(63 downto 0);
+   
+   signal rtmDacConfig   : Slv64Array(5 downto 0) := (others => (others => '0'));
+   signal fluxRampConfig : slv(63 downto 0) := (others => '0');
+   signal tesRelayConfig : slv(63 downto 0) := (others => '0');
+   signal timeConfigIn   : slv(7 downto 0) := (others => '0');
+
+   signal ipmiBsi        : BsiBusType := BSI_BUS_CONFIG_C;
 
    signal eofe           : sl               := '0';
    signal eofeCounterRst : sl               := '0';
    signal eofeCounter    : slv(31 downto 0) := (others => '0');
+
+   signal timingTrigSync : sl;
 begin
    ---------------------
    -- AXI-Lite Crossbar
@@ -148,6 +163,7 @@ begin
          streamCounterRst => streamCounterRst,
          eofeCounter      => eofeCounter,
          eofeCounterRst   => eofeCounterRst,
+         internalTrigSel  => internalTrigSel,
          -- AXI-Lite Interface
          axilClk          => axilClk,
          axilRst          => axilRst,
@@ -185,7 +201,23 @@ begin
    -----------------
    -- Trigger Module
    -----------------
-  trigStream <= startRamp AND enableStreamsSync;
+  U_TIMING_TRIG_SYNC : entity work.SynchronizerOneShot
+     generic map (
+        TPD_G   => TPD_G)
+     port map (
+        clk     => jesdClk(0),
+        dataIn  => timingTrig.trigPulse(0),
+        dataOut => timingTrigSync);
+
+  U_TRIG_SEL_SYNC : entity work.Synchronizer
+     generic map (
+        TPD_G   => TPD_G)
+     port map (
+        clk     => jesdClk(0),
+        dataIn  => internalTrigSel,
+        dataOut => internalTrigSelSync);
+
+  trigStream <= ( (startRamp AND internalTrigSelSync) OR (timingTrigSync AND NOT(internalTrigSelSync) ) ) AND enableStreamsSync;
 
   U_Stream : entity work.DummyCryoStream
      generic map (
@@ -206,9 +238,6 @@ begin
         axilReadSlave   => axilReadSlaves(STREAM_INDEX_C),
         axilWriteMaster => axilWriteMasters(STREAM_INDEX_C),
         axilWriteSlave  => axilWriteSlaves(STREAM_INDEX_C));
-
-   timingClk_s <= jesdClk(0);
-   timingRst_s <= jesdRst(0);
 
    -- Counts the number of trigger pulses
    U_SyncStatusVector : entity work.SynchronizerOneShotCnt
@@ -254,21 +283,25 @@ begin
       generic map (
          TPD_G       => TPD_G)
       port map (
-         -- Input timing interface (timingClk domain)
-         --timingClk       => timingClk,
-         --timingRst       => timingRst,
-         --timingTimestamp => timingBus.message.timestamp,
-         timingClk       => timingClk_s,
-         timingRst       => timingRst_s,
-         timingTimestamp => timestamp_s,
          -- Input Data Interface (jesdClk domain)
          jesdClk         => jesdClk(0),
          jesdRst         => jesdRst(0),
+         -- Input data (jesdClk domain)
          dataValid       => streamValid,
          dataIndex       => streamIndex,
-         data            => streamData,
+         dataIn          => streamData,
+         rtmDacConfig    => rtmDacConfig,
+         fluxRampConfig  => fluxRampConfig,
+         tesRelayConfig  => tesRelayConfig,
+         errorDet        => eofe,
+         -- Timing interface (timingClk domain)
+         timingClk       => timingClk,
+         timingRst       => timingRst,
+         timingBus       => timingBus,
+         timeConfigIn    => timeConfigIn,
+         -- IPMI interface (axisClk domain)
+         ipmiBsi         => ipmiBsi, 
          -- Output AXIS Interface (axisClk domain)
-         eofe            => eofe,
          axisClk         => axilClk,
          axisRst         => axilRst,
          axisMaster      => obAxisMasters(APP_DEBUG_STRM_C),

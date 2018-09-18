@@ -147,7 +147,6 @@ architecture mapping of SysReg is
    signal timingTxRstAsync  : sl;
 
    signal timingBus         : TimingBusType;
-   signal exptBus           : ExptBusType;
    signal appTimingMode     : sl;
 
 
@@ -346,8 +345,6 @@ begin
          appTimingBus        => timingBus,
          appTimingMode       => appTimingMode,
 
-         exptBus             => exptBus,
-
          axilClk             => clk,
          axilRst             => rst,
          axilReadMaster      => mAxilReadMasters (TIMCORE_INDEX_C),
@@ -383,7 +380,6 @@ begin
          evrClk              => appTimingClk,
          evrRst              => appTimingRst,
          evrBus              => timingBus,
-         exptBus             => exptBus,
          -- Trigger and Sync Port
          trigOut             => appTimingTrig, -- out slv(11 downto 0);
          evrModeSel          => appTimingMode
@@ -456,6 +452,7 @@ begin
          axilWriteSlave   => mAxilWriteSlaves(TIM_GTH_INDEX_C),
 
          stableClk        => clk,
+         stableRst        => rst,
 
          gtRefClk         => timingRefClk,
          gtRefClkDiv2     => timingRefClkDiv2,

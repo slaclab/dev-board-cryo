@@ -80,6 +80,17 @@ class StreamControl(pr.Device):
         ))
 
         self.add(pr.RemoteVariable(
+            name         = "InternalTriggerSel",
+            description  = "Select internal trigger (0 selects EVR)",
+            offset       = 0x00000008,
+            bitSize      = 1,
+            bitOffset    = 10,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+
+        self.add(pr.RemoteVariable(
             name         = "StreamCounter",
             description  = "Count number of stream triggers",
             offset       = 0x0000000C,

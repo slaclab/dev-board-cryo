@@ -37,6 +37,7 @@ entity AppCoreReg is
       streamCounterRst: out sl;
       eofeCounter     : in  slv(31 downto 0);
       eofeCounterRst  : out sl;
+      internalTrigSel : out sl;
       -- AXI-Lite Register Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -56,6 +57,7 @@ architecture rtl of AppCoreReg is
       streamCounterRst: sl;
       eofeCounter     : slv(31 downto 0);
       eofeCounterRst  : sl;
+      internalTrigSel : sl;
       axilReadSlave   : AxiLiteReadSlaveType;
       axilWriteSlave  : AxiLiteWriteSlaveType;
    end record;
@@ -68,6 +70,7 @@ architecture rtl of AppCoreReg is
       streamCounterRst=> '0',
       eofeCounter     => (others => '0'),
       eofeCounterRst  => '0',
+      internalTrigSel => '1',
       axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
 
@@ -96,11 +99,12 @@ begin
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
 
       -- Map the read registers
-      axiSlaveRegister(regCon, x"00", 0, v.dacSigTrigDelay);
-      axiSlaveRegister(regCon, x"04", 0, v.dacSigTrigArm);
-      axiSlaveRegister(regCon, x"08", 0, v.enableStreams);
-      axiSlaveRegister(regCon, x"08", 8, v.streamCounterRst);
-      axiSlaveRegister(regCon, x"08", 9, v.eofeCounterRst);
+      axiSlaveRegister(regCon, x"00",  0, v.dacSigTrigDelay);
+      axiSlaveRegister(regCon, x"04",  0, v.dacSigTrigArm);
+      axiSlaveRegister(regCon, x"08",  0, v.enableStreams);
+      axiSlaveRegister(regCon, x"08",  8, v.streamCounterRst);
+      axiSlaveRegister(regCon, x"08",  9, v.eofeCounterRst);
+      axiSlaveRegister(regCon, x"08", 10, v.internalTrigSel);
       axiSlaveRegisterR(regCon, x"0C", 0, r.streamCounter);
       axiSlaveRegisterR(regCon, x"10", 0, r.eofeCounter);
 
@@ -123,6 +127,7 @@ begin
       enableStreams   <= r.enableStreams;
       streamCounterRst<= r.streamCounterRst;
       eofeCounterRst  <= r.eofeCounterRst;
+      internalTrigSel <= r.internalTrigSel;
 
    end process comb;
 
