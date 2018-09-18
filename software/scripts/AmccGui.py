@@ -96,6 +96,8 @@ base.start(
 # Print the AxiVersion Summary
 base.FpgaTopLevel.AmcCarrierCore.AxiVersion.printStatus()
 
+base.ReadAll()
+
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 appTop.setStyle('Fusion')
