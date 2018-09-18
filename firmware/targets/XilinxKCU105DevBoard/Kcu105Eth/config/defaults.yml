@@ -7,16 +7,17 @@ AMCc:
         EvrV2CoreTriggers:
           EvrV2ChannelReg[0]:
             Enable: 0x1
-            RateSel: 0x1000 # 1  kHz
-            RateSel: 0x0800 # 2  kHz
-#            RateSel: 0x0400 # 3  kHz
-#            RateSel: 0x0200 # 4  kHz
-#            RateSel: 0x0100 # 5  kHz
-#            RateSel: 0x0080 # 6  kHz
-#            RateSel: 0x0040 # 8  kHz
-#            RateSel: 0x0020 # 10 kHz
-#            RateSel: 0x0010 # 12 kHz
-#            RateSel: 0x0008 # 15 kHz
+            DestSel: 0x20000 # used fixed rate triggers
+            RateSel: 0x9 # 1  kHz
+#            RateSel: 0x8 # 2  kHz
+#            RateSel: 0x7 # 3  kHz
+#            RateSel: 0x6 # 4  kHz
+#            RateSel: 0x5 # 5  kHz
+#            RateSel: 0x4 # 6  kHz
+#            RateSel: 0x3 # 8  kHz
+#            RateSel: 0x2 # 10 kHz
+#            RateSel: 0x1 # 12 kHz
+#            RateSel: 0x0 # 15 kHz
           EvrV2TriggerReg[0]:
             Enable: 0x1
             Source: 0x0
@@ -72,11 +73,12 @@ AMCc:
         RtmCryoDet:
           LowCycle: 0x02
           HighCycle: 0x02
-          FluxRampRateHz: 1000 # 1kHz
+          FluxRampRateHz: 1000 # 1kHz internal triggers
           PulseWidth: 0x100
           EnableRampTrigger: 0x1
         StreamControl:
           EnableStreams: 0x1
+          InternalTriggerSel: 0x0 # Use TPR triggers
         StreamReg:
           StreamData[:]: 0x0
       DaqMuxV2:
