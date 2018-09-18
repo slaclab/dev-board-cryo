@@ -164,7 +164,7 @@ begin
          BRAM_EN_G    => false,
          FWFT_EN_G    => true,
          DATA_WIDTH_G => 74,
-         ADDR_WIDTH_G => 4)             -- 16 buffers > 13 headers
+         ADDR_WIDTH_G => 5)             -- 32 buffers > 16 headers
       port map (
          clk                => jesdClk,
          rst                => jesdRst,
@@ -343,9 +343,9 @@ begin
          BRAM_EN_G           => true,
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 12,     -- 4096 word buffer
+         FIFO_ADDR_WIDTH_G   => 11,     -- 2048 word buffer
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 2560,  -- 2560 + 1024 payload + 16 header = 3597 < 4096
+         FIFO_PAUSE_THRESH_G => 1000,   -- 1000 + 1024 payload + 16 header = 2040 < 2048
          SLAVE_AXI_CONFIG_G  => AXI_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXI_CONFIG_G)
       port map (
