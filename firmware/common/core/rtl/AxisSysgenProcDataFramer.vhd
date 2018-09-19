@@ -2,28 +2,29 @@
 -- File       : AxisSysgenProcDataFramer.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2018-04-25
--- Last update: 2018-09-14
+-- Last update: 2018-09-19
 -------------------------------------------------------------------------------
 --
 -- Data Format:
---    DATA[0].BIT[63:0]    = HEADER[0]; -- Refer to IDLE_S for header format
---    DATA[1].BIT[63:0]    = HEADER[1];
---    DATA[2].BIT[63:0]    = HEADER[2];
+--    DATA[0].BIT[63:0]     = HEADER[0]; -- Refer to IDLE_S for header format
+--    DATA[1].BIT[63:0]     = HEADER[1];
+--    DATA[2].BIT[63:0]     = HEADER[2];
 --    ................................................
 --    ................................................
 --    ................................................
---    DATA[12].BIT[63:0]   = HEADER[12];
---    DATA[13].BIT[63:32]  = PAYLOAD[I][0];
---    DATA[13].BIT[31:0]   = PAYLOAD[Q][0];
---    DATA[14].BIT[63:32]  = PAYLOAD[I][1];
---    DATA[14].BIT[31:0]   = PAYLOAD[Q][1];
---    DATA[15].BIT[63:32]  = PAYLOAD[I][2];
---    DATA[15].BIT[31:0]   = PAYLOAD[Q][2];
+--    DATA[15].BIT[63:0]    = HEADER[15];
+--    ................................................
+--    DATA[16].BIT[15:0]    = PHASE[0], Int16 +/- pi
+--    DATA[16].BIT[31:16]   = PHASE[1], Int16 +/- pi
+--    DATA[16].BIT[47:32]   = PHASE[2], Int16 +/- pi
+--    DATA[16].BIT[63:48]   = PHASE[3], Int16 +/- pi
 --    ................................................
 --    ................................................
 --    ................................................
---    DATA[525].BIT[63:32]  = PAYLOAD[I][511];
---    DATA[525].BIT[31:0]   = PAYLOAD[Q][511];
+--    DATA[1039].BIT[15:0]  = PHASE[4092], Int16 +/- pi
+--    DATA[1039].BIT[31:16] = PHASE[4093], Int16 +/- pi
+--    DATA[1039].BIT[47:32] = PHASE[4094], Int16 +/- pi
+--    DATA[1039].BIT[63:48] = PHASE[4095], Int16 +/- pi
 --
 -------------------------------------------------------------------------------
 -- This file is part of 'LCLS2 Common Carrier Core'.
@@ -146,7 +147,8 @@ begin
          din(63 downto 0)     => timingBus.message.timestamp,
          din(95 downto 64)    => timingBus.extn.baseRateSince1Hz,
          din(127 downto 96)   => timingBus.extn.baseRateSinceTM,
-         din(167 downto 128)  => timingBus.extn.timeCodeHeader & timingBus.extn.timeCode,
+         din(159 downto 128)  => timingBus.extn.timeCode,
+         din(167 downto 160)  => timingBus.extn.timeCodeHeader,
          din(177 downto 168)  => timingBus.message.fixedRates,
          din(185 downto 178)  => timeConfigIn,
          -- Read Ports (rd_clk domain)
@@ -220,7 +222,7 @@ begin
                v.header(0)(15 downto 8)      := ipmiBsi.crateId(7 downto 0);  -- ATCA Crate ID[15:8] not included in header
                v.header(0)(23 downto 16)     := ipmiBsi.slotNumber;
                v.header(0)(31 downto 24)     := timeConfig;  -- (user defined)
-               v.header(0)(63 downto 32)     := toSlv(4096, 32);  -- # of 32 bit word in data payload
+               v.header(0)(63 downto 32)     := toSlv(4096, 32);  -- # of 16 bit word in data payload
                -- HDR[6:1]: RTM DAC settings
                v.header(1)                   := rtmDacConfig(0);  -- (user defined)
                v.header(2)                   := rtmDacConfig(1);  -- (user defined)
@@ -346,6 +348,8 @@ begin
          FIFO_ADDR_WIDTH_G   => 11,     -- 2048 word buffer
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 1000,   -- 1000 + 1024 payload + 16 header = 2040 < 2048
+         INT_WIDTH_SELECT_G  => "CUSTOM", -- Enforcing a fixed width (not auto-selected from widest bus)
+         INT_DATA_WIDTH_G    => 8, -- Enforcing 64-bit (8 byte) wide internal bus
          SLAVE_AXI_CONFIG_G  => AXI_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXI_CONFIG_G)
       port map (
