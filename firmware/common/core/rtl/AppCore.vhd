@@ -92,6 +92,14 @@ architecture Stub of AppCore is
    signal eofeCounter    : slv(31 downto 0) := (others => '0');
 
    signal timingTrigSync : sl;
+
+   signal timingValid      : sl;
+   signal timestamp        : slv(63 downto 0);
+   signal baseRateSince1Hz : slv(31 downto 0);
+   signal baseRateSinceTM  : slv(31 downto 0);
+   signal mceData          : slv(39 downto 0);
+   signal fixedRates       : slv(9  downto 0);
+   signal timeConfig       : slv(7  downto 0);
 begin
    ---------------------
    -- AXI-Lite Crossbar
@@ -164,6 +172,13 @@ begin
          eofeCounter      => eofeCounter,
          eofeCounterRst   => eofeCounterRst,
          internalTrigSel  => internalTrigSel,
+         timingValid      => timingValid,
+         timestamp        => timestamp,
+         baseRateSince1Hz => baseRateSince1Hz,
+         baseRateSinceTM  => baseRateSinceTM,
+         mceData          => mceData,
+         fixedRates       => fixedRates,
+         timeConfig       => timeConfig,
          -- AXI-Lite Interface
          axilClk          => axilClk,
          axilRst          => axilRst,
@@ -278,6 +293,39 @@ begin
          -- Clocks and Reset Ports
          wrClk      => jesdClk(0),
          rdClk      => axilClk);
+
+    U_timing : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => TPD_G,
+         DATA_WIDTH_G => 186)
+      port map (
+         -- Asynchronous Reset
+         rst                  => timingRst,
+         -- Write Ports (wr_clk domain)
+         wr_clk               => timingClk,
+         wr_en                => timingBus.valid,
+         din(63 downto 0)     => timingBus.message.timestamp,
+         din(95 downto 64)    => timingBus.extn.baseRateSince1Hz,
+         din(127 downto 96)   => timingBus.extn.baseRateSinceTM,
+         din(167 downto 128)  => timingBus.extn.timeCodeHeader & timingBus.extn.timeCode,
+         din(177 downto 168)  => timingBus.message.fixedRates,
+         din(185 downto 178)  => timeConfigIn,
+         -- Read Ports (rd_clk domain)
+         rd_clk               => axilClk,
+         dout(63 downto 0)    => timestamp,
+         dout(95 downto 64)   => baseRateSince1Hz,
+         dout(127 downto 96)  => baseRateSinceTM,
+         dout(167 downto 128) => mceData,
+         dout(177 downto 168) => fixedRates,
+         dout(185 downto 178) => timeConfig);
+
+   U_TimingValid_Sync : entity work.Synchronizer
+      generic map (
+         TPD_G        => TPD_G)
+      port map (
+         clk     => axilClk,
+         dataIn  => timingBus.valid,
+         dataOut => timingValid);
 
    U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
       generic map (

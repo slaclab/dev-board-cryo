@@ -112,6 +112,83 @@ class StreamControl(pr.Device):
             pollInterval = 1,
         ))
 
+        self.add(pr.RemoteVariable(
+            name         = "timingValid",
+            description  = "timing valid",
+            offset       = 0x00000014,
+            bitSize      = 1,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "timestamp",
+            description  = "timing system timestamp",
+            offset       = 0x00000018,
+            bitSize      = 64,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "baseRateSince1Hz",
+            description  = "ticks since 1Hz marker",
+            offset       = 0x00000020,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "baseRateSinceTM",
+            description  = "base rate since timing marker",
+            offset       = 0x00000024,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "mceData",
+            description  = "MCE data",
+            offset       = 0x00000028,
+            bitSize      = 40,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "fixedRates",
+            description  = "fixedRates",
+            offset       = 0x00000030,
+            bitSize      = 10,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "timeConfig",
+            description  = "user defined timing config",
+            offset       = 0x00000034,
+            bitSize      = 8,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
 
 class AppCore(pr.Device):
     def __init__(   self,

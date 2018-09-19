@@ -38,6 +38,13 @@ entity AppCoreReg is
       eofeCounter     : in  slv(31 downto 0);
       eofeCounterRst  : out sl;
       internalTrigSel : out sl;
+      timingValid     : in  sl;
+      timestamp       : in  slv(63 downto 0);
+      baseRateSince1Hz: in  slv(31 downto 0);
+      baseRateSinceTM : in  slv(31 downto 0);
+      mceData         : in  slv(39 downto 0);
+      fixedRates      : in  slv(9  downto 0);
+      timeConfig      : in  slv(7  downto 0);
       -- AXI-Lite Register Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -58,21 +65,35 @@ architecture rtl of AppCoreReg is
       eofeCounter     : slv(31 downto 0);
       eofeCounterRst  : sl;
       internalTrigSel : sl;
+      timingValid     : sl;
+      timestamp       : slv(63 downto 0);
+      baseRateSince1Hz: slv(31 downto 0);
+      baseRateSinceTM : slv(31 downto 0);
+      mceData         : slv(39 downto 0);
+      fixedRates      : slv(9  downto 0);
+      timeConfig      : slv(7  downto 0);
       axilReadSlave   : AxiLiteReadSlaveType;
       axilWriteSlave  : AxiLiteWriteSlaveType;
    end record;
 
    constant REG_INIT_C : RegType := (
-      dacSigTrigArm   => '0',
-      dacSigTrigDelay => (others => '0'),
-      enableStreams   => '1',
-      streamCounter   => (others => '0'),
-      streamCounterRst=> '0',
-      eofeCounter     => (others => '0'),
-      eofeCounterRst  => '0',
-      internalTrigSel => '1',
-      axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
-      axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
+      dacSigTrigArm    => '0',
+      dacSigTrigDelay  => (others => '0'),
+      enableStreams    => '1',
+      streamCounter    => (others => '0'),
+      streamCounterRst => '0',
+      eofeCounter      => (others => '0'),
+      eofeCounterRst   => '0',
+      internalTrigSel  => '1',
+      timingValid      => '0',
+      timestamp        => (others => '0'),
+      baseRateSince1Hz => (others => '0'),
+      baseRateSinceTM  => (others => '0'),
+      mceData          => (others => '0'),
+      fixedRates       => (others => '0'),
+      timeConfig       => (others => '0'),
+      axilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C,
+      axilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -82,7 +103,9 @@ begin
    --------------------- 
    -- AXI Lite Interface
    --------------------- 
-   comb : process (axilReadMaster, axilRst, axilWriteMaster, r, streamCounter, eofeCounter) is
+   comb : process (axilReadMaster, axilRst, axilWriteMaster, r, streamCounter, eofeCounter,
+                   timingValid, timestamp, baseRateSince1Hz, baseRateSinceTM, mceData,
+                   fixedRates, timeConfig) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -94,6 +117,14 @@ begin
 
       v.streamCounter := streamCounter;
       v.eofeCounter   := eofeCounter;
+
+      v.timingValid      := timingValid;
+      v.timestamp        := timestamp;
+      v.baseRateSince1Hz := baseRateSince1Hz;
+      v.baseRateSinceTM  := baseRateSinceTM;
+      v.mceData          := mceData;
+      v.fixedRates       := fixedRates;
+      v.timeConfig       := timeConfig;
 
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -107,6 +138,15 @@ begin
       axiSlaveRegister(regCon, x"08", 10, v.internalTrigSel);
       axiSlaveRegisterR(regCon, x"0C", 0, r.streamCounter);
       axiSlaveRegisterR(regCon, x"10", 0, r.eofeCounter);
+      axiSlaveRegisterR(regCon, x"14", 0, r.timingValid);
+      axiSlaveRegisterR(regCon, x"18", 0, r.timestamp(31 downto 0));
+      axiSlaveRegisterR(regCon, x"1C", 0, r.timestamp(63 downto 32));
+      axiSlaveRegisterR(regCon, x"20", 0, r.baseRateSince1Hz);
+      axiSlaveRegisterR(regCon, x"24", 0, r.baseRateSinceTM);
+      axiSlaveRegisterR(regCon, x"28", 0, r.mceData(31 downto 0));
+      axiSlaveRegisterR(regCon, x"2C", 0, r.mceData(39 downto 32));
+      axiSlaveRegisterR(regCon, x"30", 0, r.fixedRates);
+      axiSlaveRegisterR(regCon, x"34", 0, r.timeConfig);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
