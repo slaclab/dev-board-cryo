@@ -303,7 +303,7 @@ begin
          rst                  => timingRst,
          -- Write Ports (wr_clk domain)
          wr_clk               => timingClk,
-         wr_en                => timingBus.valid,
+         wr_en                => timingBus.strobe,
          din(63 downto 0)     => timingBus.message.timestamp,
          din(95 downto 64)    => timingBus.extn.baseRateSince1Hz,
          din(127 downto 96)   => timingBus.extn.baseRateSinceTM,
