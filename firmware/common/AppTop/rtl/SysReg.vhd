@@ -319,8 +319,8 @@ begin
       generic map (
          TPD_G               => TPD_G,
          STREAM_L1_G         => true,
-         AXIL_RINGB_G        => false,
-         ASYNC_G             => false,
+         AXIL_RINGB_G        => true,
+         ASYNC_G             => true,
          AXIL_BASE_ADDR_G    => SYSREG_MASTERS_CONFIG_C(TIMCORE_INDEX_C).baseAddr
       )
       port map (

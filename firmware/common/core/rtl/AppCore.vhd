@@ -31,7 +31,7 @@ use work.AppCorePkg.all;
 
 architecture Stub of AppCore is
 
-   constant NUM_AXI_MASTERS_C : natural := 5;
+   constant NUM_AXI_MASTERS_C : natural := 6;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXIL_BASE_ADDR_G, 28, 24);  -- [0x8FFFFFFF:0x80000000]
 
@@ -39,7 +39,8 @@ architecture Stub of AppCore is
    constant DSP_INDEX_C    : natural := 1;
    constant RTM_INDEX_C    : natural := 2;
    constant REG_INDEX_C    : natural := 3;
-   constant STREAM_INDEX_C : natural := 4;
+   constant HEADER_INDEX_C : natural := 4;
+   constant STREAM_INDEX_C : natural := 5;
 
    constant BSI_BUS_CONFIG_C : BsiBusType := (
       slotNumber => x"07",
@@ -69,6 +70,10 @@ architecture Stub of AppCore is
    signal rampCnt      : slv(31 downto 0);
 
    signal s_dacValues  :  sampleDataVectorArray(1 downto 0, 9 downto 0);
+   signal s_dacValids  :  Slv7Array(1 downto 0) := (others => (others => '1'));
+
+   signal s_debugValues  :  sampleDataVectorArray(1 downto 0, 3 downto 0);
+   signal s_debugValids  :  Slv4Array(1 downto 0) := (others => (others => '1'));
 
    signal jesdClkVec : slv(7 downto 0) := (others => '0');
    signal jesdRstVec : slv(7 downto 0) := (others => '0');
@@ -99,8 +104,12 @@ architecture Stub of AppCore is
    signal baseRateSinceTM  : slv(31 downto 0);
    signal mceData          : slv(39 downto 0);
    signal fixedRates       : slv(9  downto 0);
-   signal timeConfig       : slv(7  downto 0);
+   signal timingConfig     : slv(7  downto 0);
 begin
+
+   dacValids   <= s_dacValids;
+   debugValids <= s_debugValids;
+
    ---------------------
    -- AXI-Lite Crossbar
    ---------------------
@@ -172,13 +181,6 @@ begin
          eofeCounter      => eofeCounter,
          eofeCounterRst   => eofeCounterRst,
          internalTrigSel  => internalTrigSel,
-         timingValid      => timingValid,
-         timestamp        => timestamp,
-         baseRateSince1Hz => baseRateSince1Hz,
-         baseRateSinceTM  => baseRateSinceTM,
-         mceData          => mceData,
-         fixedRates       => fixedRates,
-         timeConfig       => timeConfig,
          -- AXI-Lite Interface
          axilClk          => axilClk,
          axilRst          => axilRst,
@@ -187,6 +189,34 @@ begin
          axilWriteMaster  => axilWriteMasters(REG_INDEX_C),
          axilWriteSlave   => axilWriteSlaves(REG_INDEX_C));
 
+   ------------------
+   -- Streaming header registers
+   ------------------   
+   U_TIMING_HEADER_REG : entity work.TimingHeaderReg
+      generic map ( 
+         TPD_G            => TPD_G,
+         AXI_BASE_ADDR_G  => AXI_CONFIG_C(HEADER_INDEX_C).baseAddr)
+      port map (
+         -- jesdClk
+         jesdClk          => jesdClk(0),
+         rtmDacConfig     => rtmDacConfig,
+         fluxRampConfig   => fluxRampConfig,
+         tesRelayConfig   => tesRelayConfig,
+         timingConfig     => timingConfig,
+         ipmiBsi          => ipmiBsi,
+         errorDet         => eofe,
+         -- timingClk
+         timingClk        => timingClk,
+         timingRst        => timingRst,
+         timingBus        => timingBus,
+         -- AXI-Lite Interface
+         axilClk          => axilClk,
+         axilRst          => axilRst,
+         axilReadMaster   => axilReadMasters(HEADER_INDEX_C),
+         axilReadSlave    => axilReadSlaves(HEADER_INDEX_C),
+         axilWriteMaster  => axilWriteMasters(HEADER_INDEX_C),
+         axilWriteSlave   => axilWriteSlaves(HEADER_INDEX_C));
+
    Sync_enableStreams : entity work.Synchronizer
    generic map (
       TPD_G   => TPD_G)
@@ -194,7 +224,6 @@ begin
       clk     => jesdClk(0),
       dataIn  => enableStreams,
       dataOut => enableStreamsSync);
-
 
    -----------------
    -- Trigger Module
@@ -208,8 +237,7 @@ begin
          dacSigTrigArm   => dacSigTrigArm,
          dacSigTrigDelay => dacSigTrigDelay,
          dacSigStatus    => dacSigStatus(0),
-         -- evrTrig         => evrTrig.trigPulse(0),
-         evrTrig         => '0',        -- ignore EVR
+         evrTrig         => timingTrig.trigPulse(0),
          trigHw          => trigHw(0),
          freezeHw        => freezeHw(0));
 
@@ -294,39 +322,6 @@ begin
          wrClk      => jesdClk(0),
          rdClk      => axilClk);
 
-    U_timing : entity work.SynchronizerFifo
-      generic map (
-         TPD_G        => TPD_G,
-         DATA_WIDTH_G => 186)
-      port map (
-         -- Asynchronous Reset
-         rst                  => timingRst,
-         -- Write Ports (wr_clk domain)
-         wr_clk               => timingClk,
-         wr_en                => timingBus.strobe,
-         din(63 downto 0)     => timingBus.message.timestamp,
-         din(95 downto 64)    => timingBus.extn.baseRateSince1Hz,
-         din(127 downto 96)   => timingBus.extn.baseRateSinceTM,
-         din(167 downto 128)  => timingBus.extn.timeCodeHeader & timingBus.extn.timeCode,
-         din(177 downto 168)  => timingBus.message.fixedRates,
-         din(185 downto 178)  => timeConfigIn,
-         -- Read Ports (rd_clk domain)
-         rd_clk               => axilClk,
-         dout(63 downto 0)    => timestamp,
-         dout(95 downto 64)   => baseRateSince1Hz,
-         dout(127 downto 96)  => baseRateSinceTM,
-         dout(167 downto 128) => mceData,
-         dout(177 downto 168) => fixedRates,
-         dout(185 downto 178) => timeConfig);
-
-   U_TimingValid_Sync : entity work.Synchronizer
-      generic map (
-         TPD_G        => TPD_G)
-      port map (
-         clk     => axilClk,
-         dataIn  => timingBus.valid,
-         dataOut => timingValid);
-
    U_ProcDataFramer : entity work.AxisSysgenProcDataFramer
       generic map (
          TPD_G       => TPD_G)
@@ -346,7 +341,7 @@ begin
          timingClk       => timingClk,
          timingRst       => timingRst,
          timingBus       => timingBus,
-         timeConfigIn    => timeConfigIn,
+         timeConfigIn    => timingConfig,
          -- IPMI interface (axisClk domain)
          ipmiBsi         => ipmiBsi, 
          -- Output AXIS Interface (axisClk domain)

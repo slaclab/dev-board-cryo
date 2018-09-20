@@ -112,10 +112,112 @@ class StreamControl(pr.Device):
             pollInterval = 1,
         ))
 
+class TimingHeader(pr.Device):
+    def __init__(   self,
+            name        = "TimingHeader",
+            description = "Timing header status and config",
+            **kwargs):
+        super().__init__(name=name, description=description, **kwargs)
+        #########
+        for i in range(11):
+            self.add(pr.RemoteVariable(
+                name         = f'rtmDacConfig[{i}]',
+                description  = "RTM DAC configuration",
+                offset       = 0x00000000 + 0x4*i,
+                bitSize      = 32,
+                bitOffset    = 0,
+                base         = pr.UInt,
+                mode         = "RW",
+            ))
+
+        self.add(pr.RemoteVariable(
+            name         = "fluxRampStepSize",
+            description  = "flux ramp step size",
+            offset       = 0x00000030,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+
+        self.add(pr.RemoteVariable(
+            name         = "fluxRampResetValue",
+            description  = "flux ramp reset value",
+            offset       = 0x00000034,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+
+        for i in range(2):
+            self.add(pr.RemoteVariable(
+                name         = f'tesRelayConfig[{i}]',
+                description  = "TES relay configuration",
+                offset       = 0x00000038 + 0x4*i,
+                bitSize      = 32,
+                bitOffset    = 0,
+                base         = pr.UInt,
+                mode         = "RW",
+            ))
+
+        self.add(pr.RemoteVariable(
+            name         = "timingConfig",
+            description  = "timing config",
+            offset       = 0x00000040,
+            bitSize      = 8,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "slotNumber",
+            description  = "IPMI BSI slot number",
+            offset       = 0x00000044,
+            bitSize      = 8,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "crateId",
+            description  = "IPMI BSI crate ID",
+            offset       = 0x00000048,
+            bitSize      = 16,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "errorCounterReset",
+            description  = "Error counter reset",
+            offset       = 0x0000004C,
+            bitSize      = 1,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RW",
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = "errorCounter",
+            description  = "Error counter",
+            offset       = 0x00000050,
+            bitSize      = 32,
+            bitOffset    = 0,
+            base         = pr.UInt,
+            mode         = "RO",
+            pollInterval = 1,
+        ))
+
         self.add(pr.RemoteVariable(
             name         = "timingValid",
             description  = "timing valid",
-            offset       = 0x00000014,
+            offset       = 0x00000054,
             bitSize      = 1,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -124,20 +226,32 @@ class StreamControl(pr.Device):
         ))
 
         self.add(pr.RemoteVariable(
-            name         = "timestamp",
-            description  = "timing system timestamp",
-            offset       = 0x00000018,
-            bitSize      = 64,
-            bitOffset    = 0,
+            name         = "timingExtnValid",
+            description  = "timing extension valid",
+            offset       = 0x00000054,
+            bitSize      = 1,
+            bitOffset    = 1,
             base         = pr.UInt,
             mode         = "RO",
             pollInterval = 1,
         ))
 
+        for i in range(2):
+            self.add(pr.RemoteVariable(
+                name         = f'timestamp[{i}]',
+                description  = "timing system timestamp",
+                offset       = 0x00000058 + 0x4*i,
+                bitSize      = 32,
+                bitOffset    = 0,
+                base         = pr.UInt,
+                mode         = "RO",
+                pollInterval = 1,
+            ))
+
         self.add(pr.RemoteVariable(
             name         = "baseRateSince1Hz",
             description  = "ticks since 1Hz marker",
-            offset       = 0x00000020,
+            offset       = 0x00000060,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -148,7 +262,7 @@ class StreamControl(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "baseRateSinceTM",
             description  = "base rate since timing marker",
-            offset       = 0x00000024,
+            offset       = 0x00000064,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -159,7 +273,7 @@ class StreamControl(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "mceData",
             description  = "MCE data",
-            offset       = 0x00000028,
+            offset       = 0x00000068,
             bitSize      = 40,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -170,19 +284,8 @@ class StreamControl(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "fixedRates",
             description  = "fixedRates",
-            offset       = 0x00000030,
+            offset       = 0x00000070,
             bitSize      = 10,
-            bitOffset    = 0,
-            base         = pr.UInt,
-            mode         = "RO",
-            pollInterval = 1,
-        ))
-
-        self.add(pr.RemoteVariable(
-            name         = "timeConfig",
-            description  = "user defined timing config",
-            offset       = 0x00000034,
-            bitSize      = 8,
             bitOffset    = 0,
             base         = pr.UInt,
             mode         = "RO",
@@ -242,8 +345,12 @@ class AppCore(pr.Device):
            offset=0x03000000, 
         ))
 
-        self.add(StreamData(
+        self.add(TimingHeader(
            offset=0x04000000, 
+        ))
+
+        self.add(StreamData(
+           offset=0x05000000, 
            expand=False,
         ))
 
