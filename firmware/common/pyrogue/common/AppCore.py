@@ -119,7 +119,7 @@ class TimingHeader(pr.Device):
             **kwargs):
         super().__init__(name=name, description=description, **kwargs)
         #########
-        for i in range(11):
+        for i in range(12):
             self.add(pr.RemoteVariable(
                 name         = f'rtmDacConfig[{i}]',
                 description  = "RTM DAC configuration",
