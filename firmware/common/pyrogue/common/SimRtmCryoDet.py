@@ -76,8 +76,8 @@ class SimRtmCryoDet(pr.Device):
             name         = "FluxRampRateHz",
             description  = "Flux ramp rate in Hz",
             dependencies = [self.RampMaxCnt],
-            linkedGet    = lambda var: (307.2e6)/(var.dependencies[0].value() + 1),
-            linkedSet    = lambda var, value, write: var.dependencies[0].set(round( ( (307.2e6) / value ) - 1 ), write=write),
+            linkedGet    = lambda var: (153.6e6)/(var.dependencies[0].value() + 1),
+            linkedSet    = lambda var, value, write: var.dependencies[0].set(round( ( (153.6e6) / value ) - 1 ), write=write),
             typeStr      = "Float64",
         )) 
 
