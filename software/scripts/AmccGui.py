@@ -11,7 +11,7 @@
 
 import pyrogue as pr
 import pyrogue.gui
-import PyQt4.QtGui
+import PyQt5.QtWidgets
 import sys
 import argparse
 
@@ -99,7 +99,7 @@ base.FpgaTopLevel.AmcCarrierCore.AxiVersion.printStatus()
 base.ReadAll()
 
 # Create GUI
-appTop = PyQt4.QtGui.QApplication(sys.argv)
+appTop = PyQt5.QtWidgets.QApplication(sys.argv)
 appTop.setStyle('Fusion')
 guiTop = pyrogue.gui.GuiTop(group='rootMesh')
 guiTop.addTree(base)
