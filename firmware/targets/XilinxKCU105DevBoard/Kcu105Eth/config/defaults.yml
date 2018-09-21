@@ -31,10 +31,10 @@ AMCc:
             StartAddr[1]: 0x0000000010000000
             StartAddr[2]: 0x0000000020000000
             StartAddr[3]: 0x0000000030000000
-            EndAddr[0]:   0x0000000000004000
-            EndAddr[1]:   0x0000000010004000
-            EndAddr[2]:   0x0000000020004000
-            EndAddr[3]:   0x0000000030004000
+            EndAddr[0]:   0x0000000000400000
+            EndAddr[1]:   0x0000000010400000
+            EndAddr[2]:   0x0000000020400000
+            EndAddr[3]:   0x0000000030400000
             Enabled[0]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
             Enabled[1]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
             Enabled[2]: 0x0 # Enabled:  Full rate only supports 2x channels of streaming
@@ -50,10 +50,10 @@ AMCc:
             StartAddr[1]: 0x0000000050000000
             StartAddr[2]: 0x0000000060000000
             StartAddr[3]: 0x0000000070000000
-            EndAddr[0]:   0x0000000040004000
-            EndAddr[1]:   0x0000000050004000
-            EndAddr[2]:   0x0000000060004000
-            EndAddr[3]:   0x0000000070004000
+            EndAddr[0]:   0x0000000040400000
+            EndAddr[1]:   0x0000000050400000
+            EndAddr[2]:   0x0000000060400000
+            EndAddr[3]:   0x0000000070400000
             Enabled[0]: 0x0 # Disabling 2nd DAQ MUX path
             Enabled[1]: 0x0 # Disabling 2nd DAQ MUX path
             Enabled[2]: 0x0 # Disabling 2nd DAQ MUX path
@@ -79,13 +79,21 @@ AMCc:
         StreamControl:
           EnableStreams: 0x1
           InternalTriggerSel: 0x0 # Use TPR triggers
+        TimingHeader: # populate timing header with fake data
+          rtmDacConfig[:]: 0x0
+          fluxRampStepSize: 0x100
+          fluxRampResetValue: 0x4AFFF
+          tesRelayConfig[:]: 0x0
+          timingConfig: 0x0
+          slotNumber: 0x7
+          crateId: 0x3
         StreamReg:
           StreamData[:]: 0x0
       DaqMuxV2:
         DecimationAveraging: 'Disabled'
         InputMuxSel[0]: 'Test'
         InputMuxSel[1]: 'Test'
-        DataBufferSize: 0x1000
+        DataBufferSize: 0x100000
         FormatDataWidth[:]: 'D16-bit'
         FormatSign[:]: 'Unsigned'
         DecimationAveraging[:]: 'Disabled'
