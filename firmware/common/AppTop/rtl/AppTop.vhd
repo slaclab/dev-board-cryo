@@ -31,11 +31,12 @@ use work.Jesd204bPkg.all;
 
 entity AppTop is
    generic (
-      TPD_G                : time             := 1 ns;
-      BUILD_INFO_G         : BuildInfoType;
-      XIL_DEVICE_G         : string           := "7SERIES";
-      AXIL_CLK_FRQ_G       : real             := 156.25E6;
-      APP_CORE_CONFIG_G    : AppCoreConfigType:= APP_CORE_CONFIG_DFLT_C
+      TPD_G                  : time                  := 1 ns;
+      BUILD_INFO_G           : BuildInfoType;
+      XIL_DEVICE_G           : string                := "7SERIES";
+      AXIL_CLK_FRQ_G         : real                  := 156.25E6;
+      WAVEFORM_TDATA_BYTES_G : positive range 4 to 8 := 8;
+      APP_CORE_CONFIG_G      : AppCoreConfigType     := APP_CORE_CONFIG_DFLT_C
    );
 
    port (
@@ -435,10 +436,11 @@ begin
 
       U_BSA : entity work.AmcCarrierBsa
          generic map (
-            TPD_G          => TPD_G,
-            FSBL_G         => false,
-            DISABLE_BSA_G  => APP_CORE_CONFIG_G.disableBSA,
-            DISABLE_BLD_G  => APP_CORE_CONFIG_G.disableBLD
+            TPD_G                  => TPD_G,
+            FSBL_G                 => false,
+            WAVEFORM_TDATA_BYTES_G => WAVEFORM_TDATA_BYTES_G,
+            DISABLE_BSA_G          => APP_CORE_CONFIG_G.disableBSA,
+            DISABLE_BLD_G          => APP_CORE_CONFIG_G.disableBLD
          )
          port map (
             -- AXI-Lite Interface (axilClk domain)
@@ -495,7 +497,7 @@ begin
          generic map (
             TPD_G                  => TPD_G,
             DECIMATOR_EN_G         => true,
-            WAVEFORM_TDATA_BYTES_G => 4,
+            WAVEFORM_TDATA_BYTES_G => WAVEFORM_TDATA_BYTES_G,
             BAY_INDEX_G            => ite((i = 0), '0', '1'),
             N_DATA_IN_G            => 18,
             N_DATA_OUT_G           => 4)
