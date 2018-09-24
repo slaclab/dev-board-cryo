@@ -49,6 +49,8 @@ package body AppCoreConfigPkg is
       config.jesdClk_ODIV     := 1;                -- jesdClk2x = 614.347MHz;
       config.jesdUsrClk_ODIV  := 3;                -- jesd2x / 3
 
+      config.waveformTdataBytes := 8;              -- AXI stream width between DaqMuxV2 and BSA
+
       return config;
 
    end cryoConfig;
