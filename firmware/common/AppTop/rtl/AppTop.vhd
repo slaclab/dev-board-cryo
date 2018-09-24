@@ -35,7 +35,6 @@ entity AppTop is
       BUILD_INFO_G           : BuildInfoType;
       XIL_DEVICE_G           : string                := "7SERIES";
       AXIL_CLK_FRQ_G         : real                  := 156.25E6;
-      WAVEFORM_TDATA_BYTES_G : positive range 4 to 8 := 8;
       APP_CORE_CONFIG_G      : AppCoreConfigType     := APP_CORE_CONFIG_DFLT_C
    );
 
@@ -438,7 +437,7 @@ begin
          generic map (
             TPD_G                  => TPD_G,
             FSBL_G                 => false,
-            WAVEFORM_TDATA_BYTES_G => WAVEFORM_TDATA_BYTES_G,
+            WAVEFORM_TDATA_BYTES_G => APP_CORE_CONFIG_G.waveformTdataBytes,
             DISABLE_BSA_G          => APP_CORE_CONFIG_G.disableBSA,
             DISABLE_BLD_G          => APP_CORE_CONFIG_G.disableBLD
          )
@@ -497,7 +496,7 @@ begin
          generic map (
             TPD_G                  => TPD_G,
             DECIMATOR_EN_G         => true,
-            WAVEFORM_TDATA_BYTES_G => WAVEFORM_TDATA_BYTES_G,
+            WAVEFORM_TDATA_BYTES_G => APP_CORE_CONFIG_G.waveformTdataBytes,
             BAY_INDEX_G            => ite((i = 0), '0', '1'),
             N_DATA_IN_G            => 18,
             N_DATA_OUT_G           => 4)
