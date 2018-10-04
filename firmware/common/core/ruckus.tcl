@@ -8,5 +8,8 @@ loadSource -dir  "$::DIR_PATH/rtl/"
 loadSource -path "$::DIR_PATH/dcp/ila_0.dcp"
 loadSource -path "$::DIR_PATH/dcp/ila_1.dcp"
 
+# SYSGEN
+loadSource -path "$::DIR_PATH/dcp/add_noise.dcp"
+
 # Load Simulation
 loadSource -sim_only -dir "$::DIR_PATH/tb/"

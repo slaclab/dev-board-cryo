@@ -56,21 +56,6 @@ end DummyCryoStream;
 
 architecture rtl of DummyCryoStream is
 
-   attribute dont_touch : string;
-   component ila_0
-      port (
-         clk    : in STD_LOGIC;
-         probe0 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe1 : in STD_LOGIC_VECTOR ( 0 to 0 );
-         probe2 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-         probe3 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-         probe4 : in STD_LOGIC_VECTOR ( 63 downto 0 );
-         probe5 : in STD_LOGIC_VECTOR ( 63 downto 0 )
-      );
-   end component;
-   attribute dont_touch of ila_0 : component is "yes";
-
-
    constant NUM_AXI_MASTERS_C : natural := 8;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 16, 10);
@@ -117,16 +102,6 @@ architecture rtl of DummyCryoStream is
 
 
 begin
-
-   DEBUG : ila_0
-      port map (
-         clk       => clk,
-         probe0(0) => trig,
-         probe1(0) => r.dataValid,
-         probe2    => r.dataIndexR3(10 downto 1),
-         probe3    => r.dataIndexR3(10 downto 1),
-         probe4    => r.data,
-         probe5    => r.timestamp);
 
    ---------------------
    -- AXI-Lite Crossbar
@@ -183,6 +158,18 @@ begin
 
    end generate GEN_BRAM;
 
+   U_ADD_NOISE : entity work.add_noise
+      port map (
+         clk             => clk,
+         dataIn          => r.data,
+         dataValidIn(0)  => r.dataValid,
+         dataIndexIn     => r.dataIndexR3(10 downto 1),
+         timestampIn     => r.timestamp,
+         --output
+         dataOut         => dataOut,
+         dataValidOut(0) => dataValid,
+         dataIndexOut    => dataIndex,
+         timestampOut    => timestamp);
 
    comb : process (r, rst, trig, ramData) is
       variable v    : RegType;
@@ -215,7 +202,7 @@ begin
          ----------------------------------------------------------------------
          when DATA_S =>
             v.dataIndex := r.dataIndex + 1;
-            if ( r.dataIndex = EOF_CNT_C ) then
+            if ( v.dataIndex = EOF_CNT_C ) then
                v.state     := IDLE_S;
             end if;
          ----------------------------------------------------------------------
@@ -239,10 +226,10 @@ begin
       rin       <= v;
 
       -- Outputs
-      dataIndex     <= r.dataIndexR3(10 downto 1);
-      dataValid     <= r.dataValid;
-      dataOut       <= r.data;
-      timestamp     <= r.timestamp;
+--      dataIndex     <= r.dataIndexR3(10 downto 1);
+--      dataValid     <= r.dataValid;
+--      dataOut       <= r.data;
+--      timestamp     <= r.timestamp;
    end process comb;
 
    seq : process (clk) is
