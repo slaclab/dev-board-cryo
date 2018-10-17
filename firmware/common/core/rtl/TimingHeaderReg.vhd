@@ -37,6 +37,7 @@ entity TimingHeaderReg is
       tesRelayConfig  : out slv(63 downto 0);
       timingConfig    : out slv(7  downto 0);
       ipmiBsi         : out BsiBusType; 
+      user            : out Slv64Array(2 downto 0);
       -- jesdClk status register
       errorDet        : in  sl;
       -- timingClk status registers
@@ -66,6 +67,7 @@ architecture rtl of TimingHeaderReg is
       timingConfig    : slv(7  downto 0);
       ipmiBsiSlot     : slv(7 downto 0); 
       ipmiBsiCrate    : slv(15 downto 0); 
+      user            : Slv64Array(2 downto 0);
       errorCounter    : slv(31 downto 0);
       errorCounterRst : sl;
       timingValid     : sl;
@@ -86,6 +88,7 @@ architecture rtl of TimingHeaderReg is
       timingConfig     => (others => '0'),
       ipmiBsiSlot      => (others => '0'),
       ipmiBsiCrate     => (others => '0'),
+      user             => (others => (others => '0')),
       errorCounter     => (others => '0'),
       errorCounterRst  => '0',
       timingValid      => '0',
@@ -180,7 +183,7 @@ begin
    U_GEN_SYNC : entity work.SynchronizerVector
       generic map (
          TPD_G        => TPD_G,
-         WIDTH_G      => 536)
+         WIDTH_G      => 728)
       port map (
          clk                     => jesdClk,
          -- data in
@@ -194,6 +197,9 @@ begin
          dataIn(511 downto 448)  => r.tesRelayConfig,
          dataIn(519 downto 512)  => r.ipmiBsiSlot,
          dataIn(535 downto 520)  => r.ipmiBsiCrate,
+         dataIn(599 downto 536)  => r.user(0),
+         dataIn(663 downto 600)  => r.user(1),
+         dataIn(727 downto 664)  => r.user(2),
          -- data out
          dataOut(63 downto 0)    => rtmDacConfig(0),
          dataOut(127 downto 64)  => rtmDacConfig(1),
@@ -204,7 +210,10 @@ begin
          dataOut(447 downto 384) => fluxRampConfig,
          dataOut(511 downto 448) => tesRelayConfig,
          dataOut(519 downto 512) => ipmiBsi.slotNumber,
-         dataOut(535 downto 520) => ipmiBsi.crateId);
+         dataOut(535 downto 520) => ipmiBsi.crateId,
+         dataOut(599 downto 536) => user(0),
+         dataOut(663 downto 600) => user(1),
+         dataOut(727 downto 664) => user(2));
 
    --------------------- 
    -- AXI Lite Interface
@@ -252,16 +261,23 @@ begin
       axiSlaveRegister(regCon,  x"48", 0, v.ipmiBsiCrate);
       axiSlaveRegister(regCon,  x"4C", 0, v.errorCounterRst);
 
-      axiSlaveRegisterR(regCon, x"50", 0, r.errorCounter);
-      axiSlaveRegisterR(regCon, x"54", 0, r.timingValid);
-      axiSlaveRegisterR(regCon, x"54", 1, r.timingExtnValid);
-      axiSlaveRegisterR(regCon, x"58", 0, r.timestamp(31 downto 0));
-      axiSlaveRegisterR(regCon, x"5C", 0, r.timestamp(63 downto 32));
-      axiSlaveRegisterR(regCon, x"60", 0, r.baseRateSince1Hz);
-      axiSlaveRegisterR(regCon, x"64", 0, r.baseRateSinceTM);
-      axiSlaveRegisterR(regCon, x"68", 0, r.mceData(31 downto 0));
-      axiSlaveRegisterR(regCon, x"6C", 0, r.mceData(39 downto 32));
-      axiSlaveRegisterR(regCon, x"70", 0, r.fixedRates);
+      axiSlaveRegister(regCon,  x"50", 0, v.user(0)(31 downto 0));
+      axiSlaveRegister(regCon,  x"54", 0, v.user(0)(63 downto 31));
+      axiSlaveRegister(regCon,  x"58", 0, v.user(1)(31 downto 0));
+      axiSlaveRegister(regCon,  x"5C", 0, v.user(1)(63 downto 31));
+      axiSlaveRegister(regCon,  x"60", 0, v.user(2)(31 downto 0));
+      axiSlaveRegister(regCon,  x"64", 0, v.user(2)(63 downto 31));
+
+      axiSlaveRegisterR(regCon, x"70", 0, r.errorCounter);
+      axiSlaveRegisterR(regCon, x"74", 0, r.timingValid);
+      axiSlaveRegisterR(regCon, x"74", 1, r.timingExtnValid);
+      axiSlaveRegisterR(regCon, x"78", 0, r.timestamp(31 downto 0));
+      axiSlaveRegisterR(regCon, x"7C", 0, r.timestamp(63 downto 32));
+      axiSlaveRegisterR(regCon, x"80", 0, r.baseRateSince1Hz);
+      axiSlaveRegisterR(regCon, x"84", 0, r.baseRateSinceTM);
+      axiSlaveRegisterR(regCon, x"88", 0, r.mceData(31 downto 0));
+      axiSlaveRegisterR(regCon, x"8C", 0, r.mceData(39 downto 32));
+      axiSlaveRegisterR(regCon, x"90", 0, r.fixedRates);
 
       -- Closeout the transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);

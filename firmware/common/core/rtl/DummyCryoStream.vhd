@@ -43,6 +43,7 @@ entity DummyCryoStream is
       dataOut         : out  slv(63 downto 0);
       -- timestamp (counter)
       timestamp       : out slv(63 downto 0);
+      enableNoise     : in  sl;
       -- AXI-Lite Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -99,6 +100,8 @@ architecture rtl of DummyCryoStream is
 
    signal ramAddr        : slv(8 downto 0);
    signal ramData        : Slv32Array(7 downto 0);
+
+   signal enableNoiseSync : sl;
 
 
 begin
@@ -157,6 +160,14 @@ begin
             axiWriteSlave  => axilWriteSlaves(i));
 
    end generate GEN_BRAM;
+
+   U_SYNC_EN_NOISE : entity work.Synchronizer
+      generic map (
+         TPD_G   => TPD_G)
+      port map (
+         clk     => clk,
+         dataIn  => enableNoise, 
+         dataOut => enableNoiseSync);
 
    U_ADD_NOISE : entity work.add_noise
       port map (

@@ -105,6 +105,9 @@ architecture Stub of AppCore is
    signal mceData          : slv(39 downto 0);
    signal fixedRates       : slv(9  downto 0);
    signal timingConfig     : slv(7  downto 0);
+   signal userConfig       : Slv64Array(2 downto 0);
+
+   signal enableNoise      : sl;
 begin
 
    dacValids   <= s_dacValids;
@@ -181,6 +184,7 @@ begin
          eofeCounter      => eofeCounter,
          eofeCounterRst   => eofeCounterRst,
          internalTrigSel  => internalTrigSel,
+         enableNoise      => enableNoise,
          -- AXI-Lite Interface
          axilClk          => axilClk,
          axilRst          => axilRst,
@@ -204,6 +208,7 @@ begin
          tesRelayConfig   => tesRelayConfig,
          timingConfig     => timingConfig,
          ipmiBsi          => ipmiBsi,
+         user             => userConfig,
          errorDet         => eofe,
          -- timingClk
          timingClk        => timingClk,
@@ -274,6 +279,7 @@ begin
         dataIndex       => streamIndex,
         dataOut         => streamData,
         timestamp       => timestamp_s,
+        enableNoise     => enableNoise,
         -- AXI-Lite Interface
         axilClk         => axilClk,
         axilRst         => axilRst,
@@ -336,6 +342,7 @@ begin
          rtmDacConfig    => rtmDacConfig,
          fluxRampConfig  => fluxRampConfig,
          tesRelayConfig  => tesRelayConfig,
+         user            => userConfig,
          errorDet        => eofe,
          -- Timing interface (timingClk domain)
          timingClk       => timingClk,

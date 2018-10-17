@@ -193,6 +193,18 @@ class TimingHeader(pr.Device):
             mode         = "RW",
         ))
 
+        for i in range(6):
+            self.add(pr.RemoteVariable(
+                name         = f'userConfig[{i}]',
+                description  = "User configuration",
+                offset       = 0x00000050 + 0x4*i,
+                bitSize      = 32,
+                bitOffset    = 0,
+                base         = pr.UInt,
+                mode         = "RW",
+            ))
+
+
         self.add(pr.RemoteVariable(
             name         = "errorCounterReset",
             description  = "Error counter reset",
@@ -206,7 +218,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "errorCounter",
             description  = "Error counter",
-            offset       = 0x00000050,
+            offset       = 0x00000070,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -217,7 +229,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "timingValid",
             description  = "timing valid",
-            offset       = 0x00000054,
+            offset       = 0x00000074,
             bitSize      = 1,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -228,7 +240,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "timingExtnValid",
             description  = "timing extension valid",
-            offset       = 0x00000054,
+            offset       = 0x00000074,
             bitSize      = 1,
             bitOffset    = 1,
             base         = pr.UInt,
@@ -240,7 +252,7 @@ class TimingHeader(pr.Device):
             self.add(pr.RemoteVariable(
                 name         = f'timestamp[{i}]',
                 description  = "timing system timestamp",
-                offset       = 0x00000058 + 0x4*i,
+                offset       = 0x00000078 + 0x4*i,
                 bitSize      = 32,
                 bitOffset    = 0,
                 base         = pr.UInt,
@@ -251,7 +263,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "baseRateSince1Hz",
             description  = "ticks since 1Hz marker",
-            offset       = 0x00000060,
+            offset       = 0x00000080,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -262,7 +274,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "baseRateSinceTM",
             description  = "base rate since timing marker",
-            offset       = 0x00000064,
+            offset       = 0x00000084,
             bitSize      = 32,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -273,7 +285,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "mceData",
             description  = "MCE data",
-            offset       = 0x00000068,
+            offset       = 0x00000088,
             bitSize      = 40,
             bitOffset    = 0,
             base         = pr.UInt,
@@ -284,7 +296,7 @@ class TimingHeader(pr.Device):
         self.add(pr.RemoteVariable(
             name         = "fixedRates",
             description  = "fixedRates",
-            offset       = 0x00000070,
+            offset       = 0x00000090,
             bitSize      = 10,
             bitOffset    = 0,
             base         = pr.UInt,

@@ -62,6 +62,7 @@ entity AxisSysgenProcDataFramer is
       rtmDacConfig   : in  Slv64Array(5 downto 0);
       fluxRampConfig : in  slv(63 downto 0);
       tesRelayConfig : in  slv(63 downto 0);
+      user           : in  Slv64Array(2 downto 0);
       errorDet       : out sl;
       -- Timing Interface (timingClk domain)
       timingClk      : in  sl;
@@ -183,7 +184,7 @@ begin
 
    comb : process (baseRateSince1Hz, baseRateSinceTM, mceData, data, dataIndex,
                    dataValid, fixedRates, fluxRampConfig, index, ipmiBsi,
-                   jesdRst, overflow, r, rtmDacConfig, tesRelayConfig,
+                   jesdRst, overflow, r, rtmDacConfig, tesRelayConfig, user,
                    timeConfig, timestamp, txCtrl, valid) is
       variable v : RegType;
    begin
@@ -245,10 +246,10 @@ begin
                -- HDR[12]: External real time clock from timing system
                v.header(12)(39 downto 0)     := mceData;          -- MCE data
                v.header(12)(63 downto 40)    := (others => '0');  -- RESERVED
-               -- RESERVED
-               v.header(13)(63 downto 0)     := (others => '0');  -- RESERVED
-               v.header(14)(63 downto 0)     := (others => '0');  -- RESERVED
-               v.header(15)(63 downto 0)     := (others => '0');  -- RESERVED 
+               -- User words
+               v.header(13)(63 downto 0)     := user(0);  -- (user defined)
+               v.header(14)(63 downto 0)     := user(1);  -- (user defined)
+               v.header(15)(63 downto 0)     := user(2);  -- (user defined)
                --------------------------------------------------------------
                --------------------------------------------------------------
                --------------------------------------------------------------
