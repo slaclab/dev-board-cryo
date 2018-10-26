@@ -262,11 +262,11 @@ begin
       axiSlaveRegister(regCon,  x"4C", 0, v.errorCounterRst);
 
       axiSlaveRegister(regCon,  x"50", 0, v.user(0)(31 downto 0));
-      axiSlaveRegister(regCon,  x"54", 0, v.user(0)(63 downto 31));
+      axiSlaveRegister(regCon,  x"54", 0, v.user(0)(63 downto 32));
       axiSlaveRegister(regCon,  x"58", 0, v.user(1)(31 downto 0));
-      axiSlaveRegister(regCon,  x"5C", 0, v.user(1)(63 downto 31));
+      axiSlaveRegister(regCon,  x"5C", 0, v.user(1)(63 downto 32));
       axiSlaveRegister(regCon,  x"60", 0, v.user(2)(31 downto 0));
-      axiSlaveRegister(regCon,  x"64", 0, v.user(2)(63 downto 31));
+      axiSlaveRegister(regCon,  x"64", 0, v.user(2)(63 downto 32));
 
       axiSlaveRegisterR(regCon, x"70", 0, r.errorCounter);
       axiSlaveRegisterR(regCon, x"74", 0, r.timingValid);
