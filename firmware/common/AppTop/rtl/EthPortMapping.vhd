@@ -252,6 +252,7 @@ begin
          TPD_G               => TPD_G,
          MAX_SEG_SIZE_G      => MAX_SEG_SIZE_C,
          SEGMENT_ADDR_SIZE_G => bitSize(MAX_SEG_SIZE_C/8),
+         ILEAVE_ON_NOTVALID_G=> true,
          APP_ILEAVE_EN_G     => RSSI_ILEAVE_EN_C,
          APP_STREAMS_G       => RSSI_SIZE_C,
          APP_STREAM_ROUTES_G => RSSI_ROUTES_C,
