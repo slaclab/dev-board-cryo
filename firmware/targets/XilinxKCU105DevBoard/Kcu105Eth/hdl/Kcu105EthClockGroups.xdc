@@ -10,3 +10,5 @@ set_clock_groups -asynchronous -group [get_clocks {dnaClk}]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {lcls1RefClk}]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {lcls2RefClk}]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {sgmiiClkP}]
+
+set_clock_groups -asynchronous -group [get_clocks ethRefClk] -group [get_clocks -of_objects [get_pins {GEN_10G_GTH.U_10GigE/GEN_LANE[0].TenGigEthGthUltraScale_Inst/U_TenGigEthRst/CLK156_BUFG_GT/O}]]

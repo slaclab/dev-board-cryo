@@ -1,7 +1,8 @@
+# Define Firmware Version Number
+export PRJ_VERSION = 0x00000002
+
 # Define target output
 target: prom
-
-export GIT_BYPASS = 1
 
 export TIMING_EXT_PKG = 1
 
@@ -10,9 +11,6 @@ export TIMING_EXT_PKG = 1
 # warning but that can be ignored...
 #
 #export PROJECT=MyProject
-
-# Define Firmware Version Number
-export PRJ_VERSION = 0x00000001
 
 # Define target part
 export PRJ_PART = XCKU040-FFVA1156-2-E
