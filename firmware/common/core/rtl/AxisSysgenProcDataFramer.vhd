@@ -196,7 +196,7 @@ begin
       v.txMaster.tValid := '0';
       v.txMaster.tLast  := '0';
       v.txMaster.tUser  := (others => '0');
-      v.wordDrop        := '0';
+      --v.wordDrop        := '0';
 
       --TDEST
       v.txMaster.tDest  := TDEST_G;
@@ -210,7 +210,9 @@ begin
             -- Blow off the data (no data should be in the data cache)
             v.dataRead := '1';
             -- Set the flag
-            v.wordDrop := valid;
+            if valid = '1' then
+               v.wordDrop := '1';
+            end if;
             -- Check for SOF event and empty data cache and able to move data
             if (dataValid = '1') and (dataIndex = SOF_CNT_C) and (valid = '0') and (txCtrl.pause = '0')then
                -- Stop the blowoff read
@@ -265,7 +267,9 @@ begin
             -- Check for SOF event (independent of data cache and back pressure)
             if (dataValid = '1') and (dataIndex = SOF_CNT_C) then
                -- Increment the sequence counter
-               v.seqCnt := r.seqCnt + 1;
+               v.seqCnt   := r.seqCnt + 1;
+               -- clear frame drop counter
+               v.wordDrop := '0';
             end if;
          ----------------------------------------------------------------------
          when HDR_S =>
