@@ -2,7 +2,7 @@
 -- File       : Zcu111DevBoard.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-08
--- Last update: 2019-04-19
+-- Last update: 2019-04-20
 -------------------------------------------------------------------------------
 -- Description: Example using 1000BASE-SX Protocol
 -------------------------------------------------------------------------------
@@ -299,9 +299,9 @@ begin
          RST_IN_POLARITY_G => '1',
          NUM_CLOCKS_G      => 1,
          -- MMCM attributes
-         CLKIN_PERIOD_G    => 8.0, -- 125 MHz
-         CLKFBOUT_MULT_G   => 10, -- 1.25 GHz
-         CLKOUT0_DIVIDE_G  => 8) -- 156.25 MHz
+         CLKIN_PERIOD_G    => 8.0,      -- 125 MHz
+         CLKFBOUT_MULT_G   => 10,       -- 1.25 GHz
+         CLKOUT0_DIVIDE_G  => 8)        -- 156.25 MHz
       port map(
          -- Clock Input
          clkIn     => fabClk,
