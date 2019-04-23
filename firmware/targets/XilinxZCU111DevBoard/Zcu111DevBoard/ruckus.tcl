@@ -30,10 +30,22 @@ loadRuckusTcl $::env(TOP_DIR)/submodules/amc-carrier-core/DaqMuxV2
 
 # Load local source Code and constraints
 loadSource      -dir  "$::DIR_PATH/hdl"
-loadConstraints -dir  "$::DIR_PATH/hdl"
 loadIpCore      -dir  "$::DIR_PATH/ip"
 loadIpCore      -path "$::env(TOP_DIR)/submodules/amc-carrier-core/AmcCarrierCore/ip/SysMonCore.xci"
 loadSource      -path "$::env(TOP_DIR)/submodules/amc-carrier-core/BsaCore/cores/BsaAxiInterconnect/xilinxUltraScale/BsaAxiInterconnect.dcp"
+
+loadConstraints -path "$::DIR_PATH/xdc/Zcu111DevBoard.xdc"
+
+loadConstraints -path "$::DIR_PATH/xdc/MigCore.xdc"
+set_property PROCESSING_ORDER {EARLY}     [get_files {MigCore.xdc}]
+set_property SCOPED_TO_REF    {MigCore}   [get_files {MigCore.xdc}]
+set_property SCOPED_TO_CELLS  {inst}      [get_files {MigCore.xdc}]
+
+loadConstraints -path "$::DIR_PATH/xdc/MigCore_board.xdc.xdc"
+set_property USED_IN {synthesis implementation board} [get_files {MigCore_board.xdc.xdc}]
+set_property PROCESSING_ORDER {EARLY}     [get_files {MigCore_board.xdc.xdc}]
+set_property SCOPED_TO_REF    {MigCore}   [get_files {MigCore_board.xdc.xdc}]
+set_property SCOPED_TO_CELLS  {inst}      [get_files {MigCore_board.xdc.xdc}]
 
 # Load the XVC code
 if { [info exists ::env(USE_XVC_DEBUG)] != 1 || $::env(USE_XVC_DEBUG) == 0 } {

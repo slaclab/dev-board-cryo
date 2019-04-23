@@ -2,7 +2,7 @@
 -- File       : Zcu111DevBoard.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-08
--- Last update: 2019-04-20
+-- Last update: 2019-04-23
 -------------------------------------------------------------------------------
 -- Description: Example using 1000BASE-SX Protocol
 -------------------------------------------------------------------------------
@@ -44,12 +44,14 @@ entity Zcu111DevBoard is
       -- Common Fabricate Clock
       fabClkP          : in    sl;
       fabClkN          : in    sl;
+      extRst           : in    sl;
+      led              : out   slv(7 downto 0);
       -- SFP Ports
       sfpRxP           : in    slv(3 downto 0);
       sfpRxN           : in    slv(3 downto 0);
       sfpTxP           : out   slv(3 downto 0);
       sfpTxN           : out   slv(3 downto 0);
-      sfpTxDisableN    : out   slv(3 downto 0) := (others => '1');
+      sfpTxEnable      : out   slv(3 downto 0) := (others => '1');
       -- Ethernet Ports
       ethClkP          : in    sl;
       ethClkN          : in    sl;
@@ -197,6 +199,15 @@ architecture top_level of Zcu111DevBoard is
 
 begin
 
+   led(7) <= extRst;
+   led(6) <= ethPhyReady;
+   led(5) <= not(fabRst);
+   led(4) <= not(axilRst);
+   led(3) <= not(axiRst);
+   led(2) <= not(diagnosticRst);
+   led(1) <= not(timingRst);
+   led(0) <= not(recTimingRst);
+
    U_TERM_GTs : entity work.Gtye4ChannelDummy
       generic map (
          TPD_G   => TPD_G,
@@ -289,6 +300,7 @@ begin
          TPD_G => TPD_G)
       port map(
          clk    => fabClk,
+         arst   => extRst,
          rstOut => fabRst);
 
    U_AmcCorePll : entity work.ClockManagerUltraScale
@@ -409,6 +421,7 @@ begin
       generic map (
          TPD_G                 => TPD_G,
          ETH_SPEED_G           => true,        -- false: 1GbE, true: 10GbE
+         -- ETH_SPEED_G           => false,        -- false: 1GbE, true: 10GbE
          DHCP_G                => false,
          RSSI_ILEAVE_EN_G      => true,
          ETH_USR_FRAME_LIMIT_G => 9000)
@@ -578,7 +591,8 @@ begin
    U_DdrMem : entity work.AmcCarrierDdrMem
       generic map (
          TPD_G  => TPD_G,
-         FSBL_G => false)
+         -- FSBL_G => false)
+         FSBL_G => true)
       port map (
          -- AXI-Lite Interface
          axilClk          => axilClk,
