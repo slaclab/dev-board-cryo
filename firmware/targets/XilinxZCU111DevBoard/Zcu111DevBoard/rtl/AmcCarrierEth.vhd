@@ -2,7 +2,7 @@
 -- File       : AmcCarrierEth.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-09-21
--- Last update: 2018-03-14
+-- Last update: 2019-04-23
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
@@ -32,8 +32,8 @@ entity AmcCarrierEth is
    generic (
       TPD_G                 : time     := 1 ns;
       DHCP_G                : boolean  := false;
-      RSSI_ILEAVE_EN_G      : boolean  := false;
-      ETH_SPEED_G           : boolean  := false; -- false: 1GbE, true: 10GbE
+      RSSI_ILEAVE_EN_G      : boolean  := true;
+      ETH_SPEED_G           : boolean  := false;    -- false: 1GbE, true: 10GbE
       ETH_USR_FRAME_LIMIT_G : positive := 4096);    -- 4kB
    port (
       -- Local Configuration and status
@@ -192,34 +192,34 @@ begin
    -- 10 GigE Module
    -----------------
    ETH_10GbE : if (ETH_SPEED_G = true) generate
-   
-   U_ETH : entity work.TenGigEthGtyUltraScaleWrapper
-      generic map (
-         TPD_G             => TPD_G,
-         NUM_LANE_G        => 1,
-         QPLL_REFCLK_SEL_G => "001",
-         AXIS_CONFIG_G     => (others => EMAC_AXIS_CONFIG_C))
-      port map (
-         -- Local Configurations
-         localMac(0)   => localMac,
-         -- Streaming DMA Interface 
-         dmaClk(0)       => axilClk,
-         dmaRst(0)       => axilRst,
-         dmaIbMasters(0) => obMacMaster,
-         dmaIbSlaves(0)  => obMacSlave,
-         dmaObMasters(0) => ibMacMaster,
-         dmaObSlaves(0)  => ibMacSlave,
-         -- Misc. Signals
-         extRst       => axilRst,
-         phyReady(0)  => phyReady,
-         -- MGT Clock Port (156.25 MHz or 312.5 MHz)
-         gtClkP       => ethClkP,
-         gtClkN       => ethClkN,
-         -- MGT Ports
-         gtTxP(0)     => ethTxP,
-         gtTxN(0)     => ethTxN,
-         gtRxP(0)     => ethRxP,
-         gtRxN(0)     => ethRxN);   
+
+      U_ETH : entity work.TenGigEthGtyUltraScaleWrapper
+         generic map (
+            TPD_G             => TPD_G,
+            NUM_LANE_G        => 1,
+            QPLL_REFCLK_SEL_G => "001",
+            AXIS_CONFIG_G     => (others => EMAC_AXIS_CONFIG_C))
+         port map (
+            -- Local Configurations
+            localMac(0)     => localMac,
+            -- Streaming DMA Interface 
+            dmaClk(0)       => axilClk,
+            dmaRst(0)       => axilRst,
+            dmaIbMasters(0) => obMacMaster,
+            dmaIbSlaves(0)  => obMacSlave,
+            dmaObMasters(0) => ibMacMaster,
+            dmaObSlaves(0)  => ibMacSlave,
+            -- Misc. Signals
+            extRst          => axilRst,
+            phyReady(0)     => phyReady,
+            -- MGT Clock Port (156.25 MHz)
+            gtClkP          => ethClkP,
+            gtClkN          => ethClkN,
+            -- MGT Ports
+            gtTxP(0)        => ethTxP,
+            gtTxN(0)        => ethTxN,
+            gtRxP(0)        => ethRxP,
+            gtRxN(0)        => ethRxN);
    end generate;
 
    ----------------
@@ -289,7 +289,7 @@ begin
          CLK_FREQ_G     => AXI_CLK_FREQ_C,  -- In units of Hz
          COMM_TIMEOUT_G => 30,  -- In units of seconds, Client's Communication timeout before re-ARPing
          VLAN_G         => false,       -- no VLAN       
-         DHCP_G         => DHCP_G) 
+         DHCP_G         => DHCP_G)
       port map (
          -- Local Configurations
          localMac        => localMac,

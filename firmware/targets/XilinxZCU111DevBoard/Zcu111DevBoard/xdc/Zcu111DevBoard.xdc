@@ -64,7 +64,6 @@ set_property -dict { PACKAGE_PIN G10 IOSTANDARD LVCMOS12 } [get_ports { sfpTxEna
 set_property -dict { PACKAGE_PIN K12 IOSTANDARD LVCMOS12 } [get_ports { sfpTxEnable[2] }]
 set_property -dict { PACKAGE_PIN J7  IOSTANDARD LVCMOS12 } [get_ports { sfpTxEnable[3] }]
 
-
 set_property -dict { PACKAGE_PIN W17 IOSTANDARD ANALOG } [get_ports { vPIn }]
 set_property -dict { PACKAGE_PIN Y16 IOSTANDARD ANALOG } [get_ports { vNIn }]
 

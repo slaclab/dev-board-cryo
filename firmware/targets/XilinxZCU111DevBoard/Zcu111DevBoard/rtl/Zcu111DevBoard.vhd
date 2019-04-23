@@ -195,12 +195,10 @@ architecture top_level of Zcu111DevBoard is
    signal fabRst       : sl;
    signal reset        : sl;
 
-   signal ethPhyReady : sl;
-
 begin
 
    led(7) <= extRst;
-   led(6) <= ethPhyReady;
+   led(6) <= ethLinkUp;
    led(5) <= not(fabRst);
    led(4) <= not(axilRst);
    led(3) <= not(axiRst);
@@ -420,8 +418,8 @@ begin
    U_Eth : entity work.AmcCarrierEth
       generic map (
          TPD_G                 => TPD_G,
-         ETH_SPEED_G           => true,        -- false: 1GbE, true: 10GbE
-         -- ETH_SPEED_G           => false,        -- false: 1GbE, true: 10GbE
+         -- ETH_SPEED_G           => true,        -- false: 1GbE, true: 10GbE
+         ETH_SPEED_G           => false,        -- false: 1GbE, true: 10GbE
          DHCP_G                => false,
          RSSI_ILEAVE_EN_G      => true,
          ETH_USR_FRAME_LIMIT_G => 9000)
