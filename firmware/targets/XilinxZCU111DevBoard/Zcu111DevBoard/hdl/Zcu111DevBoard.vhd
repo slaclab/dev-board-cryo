@@ -49,7 +49,7 @@ entity Zcu111DevBoard is
       sfpRxN           : in    slv(3 downto 0);
       sfpTxP           : out   slv(3 downto 0);
       sfpTxN           : out   slv(3 downto 0);
-      sfpTxDisable     : out   slv(3 downto 0) := (others => '0');
+      sfpTxDisableN    : out   slv(3 downto 0) := (others => '1');
       -- Ethernet Ports
       ethClkP          : in    sl;
       ethClkN          : in    sl;
