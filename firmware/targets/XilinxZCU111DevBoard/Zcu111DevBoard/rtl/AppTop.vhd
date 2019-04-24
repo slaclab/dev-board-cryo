@@ -56,6 +56,8 @@ entity AppTop is
       axilReadSlave        : out   AxiLiteReadSlaveType;
       axilWriteMaster      : in    AxiLiteWriteMasterType;
       axilWriteSlave       : out   AxiLiteWriteSlaveType;
+      iicScl               : inout slv(1 downto 0);
+      iicSda               : inout slv(1 downto 0);
       -- Timing Interface (timingClk domain) 
       timingClk            : out   sl;
       timingRst            : out   sl;
@@ -412,6 +414,8 @@ begin
          ----------------------
          -- Top Level Interface
          ----------------------
+         iicScl              => iicScl,
+         iicSda              => iicSda,
          -- Timing Interface (timingClk domain)   
          timingClk           => recTimingClk,
          timingRst           => recTimingRst,

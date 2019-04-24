@@ -35,6 +35,7 @@ loadIpCore      -path "$::env(TOP_DIR)/submodules/amc-carrier-core/AmcCarrierCor
 loadSource      -path "$::env(TOP_DIR)/submodules/amc-carrier-core/BsaCore/cores/BsaAxiInterconnect/xilinxUltraScale/BsaAxiInterconnect.dcp"
 
 loadConstraints -path "$::DIR_PATH/xdc/Zcu111DevBoard.xdc"
+loadConstraints -path "$::DIR_PATH/xdc/iic_pins.xdc"
 
 loadConstraints -path "$::DIR_PATH/xdc/MigCore.xdc"
 set_property PROCESSING_ORDER {EARLY}     [get_files {MigCore.xdc}]

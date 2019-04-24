@@ -85,6 +85,9 @@ entity Zcu111DevBoard is
       c0_ddr4_ck_t     : out   slv(0 downto 0);
       ddrScl           : inout sl;
       ddrSda           : inout sl;
+      -- I2C
+      iicScl           : inout slv(1 downto 0);
+      iicSda           : inout slv(1 downto 0);
       -- SYSMON Ports
       vPIn             : in    sl;
       vNIn             : in    sl);
@@ -239,6 +242,9 @@ begin
          axilReadSlave        => axilReadSlave,
          axilWriteMaster      => axilWriteMaster,
          axilWriteSlave       => axilWriteSlave,
+         -- I2C
+         iicScl               => iicScl,
+         iicSda               => iicSda,
          -- Timing Interface (timingClk domain) 
          timingClk            => timingClk,
          timingRst            => timingRst,

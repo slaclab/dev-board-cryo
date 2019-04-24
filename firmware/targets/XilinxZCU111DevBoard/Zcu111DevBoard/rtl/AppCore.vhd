@@ -30,6 +30,7 @@ use work.TimingPkg.all;
 use work.AmcCarrierPkg.all;
 use work.jesd204bpkg.all;
 use work.AppTopPkg.all;
+use work.I2cPkg.all;
 
 entity AppCore is
    generic (
@@ -74,6 +75,9 @@ entity AppCore is
       ----------------------
       -- Top Level Interface
       ----------------------
+      -- IIC
+      iicScl              : inout slv(1 downto 0);
+      iicSda              : inout slv(1 downto 0);
       -- Timing Interface (timingClk domain) 
       timingClk           : in  sl;
       timingRst           : in  sl;
@@ -108,8 +112,7 @@ architecture mapping of AppCore is
 
    constant NUM_AXI_MASTERS_C : natural := 2;
 
-   constant AMC_INDEX_C : natural := 0;
-   constant RTM_INDEX_C : natural := 1;
+   constant IIC_1_INDEX_C : natural := 0;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 28, 24);  -- [0x8FFFFFFF:0x80000000]
 
@@ -124,6 +127,17 @@ architecture mapping of AppCore is
    signal locDacValues   : sampleDataVectorArray(1 downto 0, 9 downto 0) := (others => (others => x"0000_0000"));
    signal locDebugValids : Slv4Array(1 downto 0)                         := (others => (others => '0'));
    signal locDebugValues : sampleDataVectorArray(1 downto 0, 3 downto 0) := (others => (others => x"0000_0000"));   
+
+   constant NUM_IIC_1_DEVS_C  : natural := 6;
+
+   constant IIC_1_DEVICE_MAP_C: I2cAxiLiteDevArray(0 to NUM_IIC_1_DEVS_C-1) := (
+      0 => (MakeI2cAxiLiteDevType("1110100", 8,  0, '1')), -- TCA9548
+      1 => (MakeI2cAxiLiteDevType("1010100", 8,  8, '1')), -- Atmel24C08 
+      2 => (MakeI2cAxiLiteDevType("0110110", 8,  8, '1')), -- Si5341
+      3 => (MakeI2cAxiLiteDevType("1011101", 8,  8, '1')), -- Si570
+      4 => (MakeI2cAxiLiteDevType("1101001", 8,  8, '1')), -- Si5382 (SFP CLK recovery)
+      5 => (MakeI2cAxiLiteDevType("0101111", 32, 0, '1'))  -- SC18IS602B
+   );
 
 begin
 
@@ -183,5 +197,25 @@ begin
          mAxiWriteSlaves     => axilWriteSlaves,
          mAxiReadMasters     => axilReadMasters,
          mAxiReadSlaves      => axilReadSlaves);
+
+   -- IIC Master
+   U_AxiI2cRegMaster : entity work.AxiI2cRegMaster
+      generic map (
+         TPD_G              => TPD_G,
+         DEVICE_MAP_G       => IIC_1_DEVICE_MAP_C
+      )
+      port map (
+         scl                => iicScl(1),
+         sda                => iicSda(1),
+
+         axiClk             => axilClk,
+         axiRst             => axilRst,
+
+         axiReadMaster      => axilReadMasters(IIC_1_INDEX_C),
+         axiReadSlave       => axilReadSlaves(IIC_1_INDEX_C),
+         axiWriteMaster     => axilWriteMasters(IIC_1_INDEX_C),
+         axiWriteSlave      => axilWriteSlaves(IIC_1_INDEX_C)
+      );
+
          
 end mapping;
