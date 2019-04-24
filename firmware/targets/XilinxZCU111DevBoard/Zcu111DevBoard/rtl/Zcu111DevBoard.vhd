@@ -418,8 +418,8 @@ begin
    U_Eth : entity work.AmcCarrierEth
       generic map (
          TPD_G                 => TPD_G,
-         -- ETH_SPEED_G           => true,        -- false: 1GbE, true: 10GbE
-         ETH_SPEED_G           => false,        -- false: 1GbE, true: 10GbE
+         ETH_SPEED_G           => true,        -- true: 10GbE
+         -- ETH_SPEED_G           => false,        -- false: 1GbE
          DHCP_G                => false,
          RSSI_ILEAVE_EN_G      => true,
          ETH_USR_FRAME_LIMIT_G => 9000)
@@ -589,8 +589,8 @@ begin
    U_DdrMem : entity work.AmcCarrierDdrMem
       generic map (
          TPD_G  => TPD_G,
-         -- FSBL_G => false)
-         FSBL_G => true)
+         -- FSBL_G => false) -- False = BSA/DaqMuxV2
+         FSBL_G => true) -- true = memory tester
       port map (
          -- AXI-Lite Interface
          axilClk          => axilClk,
