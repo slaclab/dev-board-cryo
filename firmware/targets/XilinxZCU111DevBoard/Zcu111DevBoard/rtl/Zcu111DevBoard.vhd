@@ -589,8 +589,8 @@ begin
    U_DdrMem : entity work.AmcCarrierDdrMem
       generic map (
          TPD_G  => TPD_G,
-         -- FSBL_G => false) -- False = BSA/DaqMuxV2
-         FSBL_G => true) -- true = memory tester
+         FSBL_G => false) -- False = BSA/DaqMuxV2
+         -- FSBL_G => true) -- true = memory tester
       port map (
          -- AXI-Lite Interface
          axilClk          => axilClk,
