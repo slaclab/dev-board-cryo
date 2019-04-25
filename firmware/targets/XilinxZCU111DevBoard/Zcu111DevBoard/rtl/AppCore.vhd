@@ -135,7 +135,7 @@ architecture mapping of AppCore is
       1 => (MakeI2cAxiLiteDevType("1010100", 8,  8, '1')), -- Atmel24C08 
       2 => (MakeI2cAxiLiteDevType("0110110", 8,  8, '1')), -- Si5341
       3 => (MakeI2cAxiLiteDevType("1011101", 8,  8, '1')), -- Si570
-      4 => (MakeI2cAxiLiteDevType("1101001", 8,  8, '1')), -- Si5382 (SFP CLK recovery)
+      4 => (MakeI2cAxiLiteDevType("1101000", 8,  8, '1')), -- Si5382 (SFP CLK recovery)
       5 => (MakeI2cAxiLiteDevType("0101111", 32, 0, '1'))  -- SC18IS602B
    );
 
