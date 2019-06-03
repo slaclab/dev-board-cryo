@@ -50,7 +50,7 @@ entity InfoStream is
       timingBits    : in slv(136 downto 0);
       -- Output
       dataValid     : out  sl;
-      dataOut       : out  slv(31 downto 0);
+      dataOut       : out  slv(31 downto 0));
 end InfoStream;
 
 architecture rtl of InfoStream is
