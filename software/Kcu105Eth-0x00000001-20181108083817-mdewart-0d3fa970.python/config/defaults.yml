@@ -1,0 +1,106 @@
+AMCc: 
+  FpgaTopLevel:
+    AmcCarrierCore:
+      AmcCarrierTiming:
+        TimingFrameRx:
+          ClkSel: 0x1 # Setup SMURF timing reference
+        EvrV2CoreTriggers:
+          EvrV2ChannelReg[0]:
+            Enable: 0x1
+            DestSel: 0x20000 # used fixed rate triggers
+            RateSel: 0x9 # 1  kHz
+#            RateSel: 0x8 # 2  kHz
+#            RateSel: 0x7 # 3  kHz
+#            RateSel: 0x6 # 4  kHz
+#            RateSel: 0x5 # 5  kHz
+#            RateSel: 0x4 # 6  kHz
+#            RateSel: 0x3 # 8  kHz
+#            RateSel: 0x2 # 10 kHz
+#            RateSel: 0x1 # 12 kHz
+#            RateSel: 0x0 # 15 kHz
+          EvrV2TriggerReg[0]:
+            Enable: 0x1
+            Source: 0x0
+            Polarity: 0x1
+            Delay: 0x0
+            Width: 0x100
+      AmcCarrierBsa:
+        BsaWaveformEngine[0]:
+          WaveformEngineBuffers:
+            StartAddr[0]: 0x0000000000000000
+            StartAddr[1]: 0x0000000010000000
+            StartAddr[2]: 0x0000000020000000
+            StartAddr[3]: 0x0000000030000000
+            EndAddr[0]:   0x0000000000400000
+            EndAddr[1]:   0x0000000010400000
+            EndAddr[2]:   0x0000000020400000
+            EndAddr[3]:   0x0000000030400000
+            Enabled[0]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[1]: 0x1 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[2]: 0x0 # Enabled:  Full rate only supports 2x channels of streaming
+            Enabled[3]: 0x0 # Enabled:  Full rate only supports 2x channels of streaming
+            Mode[:]: DoneWhenFull
+            Init[:]: 0x0
+            SoftTrigger[:]: 0x0
+            MsgDest[:]: Auto-Readout
+            FramesAfterTrigger[:]: 0x0
+        BsaWaveformEngine[1]:
+          WaveformEngineBuffers:
+            StartAddr[0]: 0x0000000040000000
+            StartAddr[1]: 0x0000000050000000
+            StartAddr[2]: 0x0000000060000000
+            StartAddr[3]: 0x0000000070000000
+            EndAddr[0]:   0x0000000040400000
+            EndAddr[1]:   0x0000000050400000
+            EndAddr[2]:   0x0000000060400000
+            EndAddr[3]:   0x0000000070400000
+            Enabled[0]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[1]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[2]: 0x0 # Disabling 2nd DAQ MUX path
+            Enabled[3]: 0x0 # Disabling 2nd DAQ MUX path
+            Mode[:]: DoneWhenFull
+            Init[:]: 0x0
+            SoftTrigger[:]: 0x0
+            MsgDest[:]: Auto-Readout
+            FramesAfterTrigger[:]: 0x0
+      FanController:
+        Bypass: 0x0
+        Preshift : 0x7
+        Kp: 0x7C
+        RefTemperature: 35
+    AppTop:
+      AppCore:
+        RtmCryoDet:
+          LowCycle: 0x02
+          HighCycle: 0x02
+          FluxRampRateHz: 1000 # 1kHz internal triggers
+          PulseWidth: 0x100
+          EnableRampTrigger: 0x1
+        StreamControl:
+          EnableStreams: 0x1
+          InternalTriggerSel: 0x0 # Use TPR triggers
+        TimingHeader: # populate timing header with fake data
+          rtmDacConfig[:]: 0x0
+          fluxRampStepSize: 0x100
+          fluxRampResetValue: 0x4AFFF
+          tesRelayConfig[:]: 0x0
+          timingConfig: 0x0
+          slotNumber: 0x7
+          crateId: 0x3
+        StreamReg:
+          StreamData[:]: 0x0
+      DaqMuxV2:
+        DecimationAveraging: 'Disabled'
+        InputMuxSel[0]: 'Test'
+        InputMuxSel[1]: 'Test'
+        DataBufferSize: 0x100000
+        FormatDataWidth[:]: 'D16-bit'
+        FormatSign[:]: 'Unsigned'
+        DecimationAveraging[:]: 'Disabled'
+        PacketHeaderEn: 'Disabled'
+        TriggerHwAutoRearm: 'Disabled'
+      DacSigGen:
+        EnableMask: 0x3   # Enable both channels
+        ModeMask:   0x3   # Set both channels into 'Periodic Mode'
+        SignFormat: 0x0   # Set both channels to 'Signed 2's complement' format
+        #CsvFilePath: /afs/slac.stanford.edu/u/rl/dandvan/cryo_det/matlab/broad_noise4.csv
