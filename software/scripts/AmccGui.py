@@ -69,6 +69,8 @@ parser.add_argument(
 # Get the arguments
 args = parser.parse_args()
 
+pcieRssiLink = int(args.slot)-2
+
 #################################################################
 
 # Set base
@@ -79,14 +81,14 @@ base.add(FpgaTopLevel(
     simGui       = args.simGui,
     commType     = args.commType,
     ipAddr       = args.ipAddr,
-    pcieRssiLink = (int(args.slot)-2),
+    pcieRssiLink = pcieRssiLink,
 ))
 
 streamDataWriter = pyrogue.utilities.fileio.StreamWriter(name='streamDataWriter')
 
 base.add(streamDataWriter)
 
-pyrogue.streamConnect(base.FpgaTopLevel.stream.application(0xC1), base.streamDataWriter.getChannel(0))
+pyrogue.streamConnect(base.FpgaTopLevel.stream.application(pcieRssiLink*0x100 + 0xC1), base.streamDataWriter.getChannel(0))
 
 # Start the system
 base.start(
