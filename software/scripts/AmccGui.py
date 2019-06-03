@@ -84,11 +84,11 @@ base.add(FpgaTopLevel(
     pcieRssiLink = pcieRssiLink,
 ))
 
-streamDataWriter = pyrogue.utilities.fileio.StreamWriter(name='streamDataWriter')
+# streamDataWriter = pyrogue.utilities.fileio.StreamWriter(name='streamDataWriter')
 
-base.add(streamDataWriter)
+# base.add(streamDataWriter)
 
-pyrogue.streamConnect(base.FpgaTopLevel.stream.application(pcieRssiLink*0x100 + 0xC1), base.streamDataWriter.getChannel(0))
+# pyrogue.streamConnect(base.FpgaTopLevel.stream.application(pcieRssiLink*0x100 + 0xC1), base.streamDataWriter.getChannel(0))
 
 # Start the system
 base.start(
