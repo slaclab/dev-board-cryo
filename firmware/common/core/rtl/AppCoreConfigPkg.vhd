@@ -42,7 +42,8 @@ package body AppCoreConfigPkg is
       config.sigGenRamClk     := (others => "11111111"); -- 0: jesd2x, 1: jesd1x
 
       -- Disable BSA
-      --config.disableBSA       := true;
+      config.disableBSA       := true;
+      config.disableBLD       := true;
 
       -- We want jesdClk2x = 614.4MHz, jesdClk = 307.2Mhz
       config.jesdClk_IDIV     := 11;               -- with AXIL_CLK_FRQ_G = 125*5/4 -> 156.25/11MHz

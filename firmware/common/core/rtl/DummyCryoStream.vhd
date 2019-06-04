@@ -237,10 +237,10 @@ begin
       rin       <= v;
 
       -- Outputs
---      dataIndex     <= r.dataIndexR3(10 downto 1);
---      dataValid     <= r.dataValid;
---      dataOut       <= r.data;
---      timestamp     <= r.timestamp;
+--     dataIndex     <= r.dataIndexR3(10 downto 1);
+--     dataValid     <= r.dataValid;
+--     dataOut       <= r.data;
+--     timestamp     <= r.timestamp;
    end process comb;
 
    seq : process (clk) is

@@ -78,8 +78,8 @@ package AppCorePkg is
       ipAddress            => x"0A02A8C0",      -- 192.168.2.10 (ETH only)
       useDhcp              => true,
       enableEthJumboFrames => false,
-      disableBSA           => false,
-      disableBLD           => false,
+      disableBSA           => true,
+      disableBLD           => true,
       numAppLEDs           => 4,
       jesdClk_IDIV         => 5,                -- with AXIL_CLK_FRQ_G = 125*5/4 -> 125/4MHz
       jesdClk_MULT_F       => 35.5,             -- 1109.375MHz

@@ -30,7 +30,7 @@ class StreamData(pr.Device):
         super().__init__(name=name, description=description, **kwargs)
         #########
         # Devices
-        for i in range(4096):
+        for i in range(8):
            self.add(pr.RemoteVariable(
                name         = f'StreamData[{i}]',
                description  = "Dummy stream data",

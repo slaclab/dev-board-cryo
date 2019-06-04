@@ -173,21 +173,21 @@ class SysReg(pr.Device):
             expand       =  False,
         ))
         
-        self.add(DevBoardTiming(
-            offset       =  0x04000000, 
-            expand       =  False,
-        ))
+        # self.add(DevBoardTiming(
+            # offset       =  0x04000000, 
+            # expand       =  False,
+        # ))
 
         self.add(LocReg(
             offset       =  0x07000000, 
             expand       =  False,
         ))
 
-        self.add(AmcCarrierBsa(   
-            offset       =  0x08000000, 
-            enableBsa    =  enableBsa,
-            expand       =  False,
-        ))
+        # self.add(AmcCarrierBsa(   
+            # offset       =  0x08000000, 
+            # enableBsa    =  enableBsa,
+            # expand       =  False,
+        # ))
                             
         self.add(udp.UdpEngineClient(
             name         = "BpUdpCltApp",
@@ -248,9 +248,9 @@ class SysReg(pr.Device):
         # Retire any in-flight transactions before starting
         self._root.checkBlocks(recurse=True)
         
-        for i in range(2):
-            v = getattr(self.AmcCarrierBsa, 'BsaWaveformEngine[%i]'%i)
-            v.WaveformEngineBuffers.Initialize()
+        # for i in range(2):
+            # v = getattr(self.AmcCarrierBsa, 'BsaWaveformEngine[%i]'%i)
+            # v.WaveformEngineBuffers.Initialize()
         
         self.checkBlocks(recurse=True)
         

@@ -169,10 +169,10 @@ architecture mapping of AppTop is
    signal diagnosticRst     : sl;
    signal diagnosticBus     : DiagnosticBusType;
 
-   signal rssiIbMasters     : AxiStreamMasterArray(RSSI_SIZE_C - 1 downto 0);
-   signal rssiIbSlaves      : AxiStreamSlaveArray (RSSI_SIZE_C - 1 downto 0);
-   signal rssiObMasters     : AxiStreamMasterArray(RSSI_SIZE_C - 1 downto 0);
-   signal rssiObSlaves      : AxiStreamSlaveArray (RSSI_SIZE_C - 1 downto 0);
+   signal rssiIbMasters     : AxiStreamMasterArray(RSSI_SIZE_C - 1 downto 0) := (others=>AXI_STREAM_MASTER_INIT_C);
+   signal rssiIbSlaves      : AxiStreamSlaveArray (RSSI_SIZE_C - 1 downto 0) := (others=>AXI_STREAM_SLAVE_FORCE_C);
+   signal rssiObMasters     : AxiStreamMasterArray(RSSI_SIZE_C - 1 downto 0) := (others=>AXI_STREAM_MASTER_INIT_C);
+   signal rssiObSlaves      : AxiStreamSlaveArray (RSSI_SIZE_C - 1 downto 0) := (others=>AXI_STREAM_SLAVE_FORCE_C);
 
    signal waveformMasters   : WaveformMasterArrayType := WAVEFORM_MASTER_ARRAY_INIT_C;
    signal waveformSlaves    : WaveformSlaveArrayType;
@@ -475,14 +475,6 @@ begin
             obAppWaveformMasters => waveformMasters,
             obAppWaveformSlaves  => waveformSlaves
          );
-
-
-      NO_GEN_BSA : if ( APP_CORE_CONFIG_G.disableBSA ) generate
-         rssiObSlaves (3 downto 0) <= (others => AXI_STREAM_SLAVE_FORCE_C);
-         rssiIbMasters(3 downto 0) <= (others => AXI_STREAM_MASTER_INIT_C);
-
-         axiWriteMaster            <= AXI_WRITE_MASTER_INIT_C;
-      end generate;
 
       trigCascBay(APP_CORE_CONFIG_G.numBays) <= trigCascBay(0);
       armCascBay (APP_CORE_CONFIG_G.numBays) <= armCascBay(0);
