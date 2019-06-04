@@ -78,8 +78,8 @@ AMCc:
           EnableRampTrigger: 0x1
         StreamControl:
           EnableStreams: 0x1
-          # InternalTriggerSel: 0x1 # Use TPR triggers
-          InternalTriggerSel: 0x0 # Use TPR triggers
+          InternalTriggerSel: 0x1 # Use TPR triggers
+          # InternalTriggerSel: 0x0 # Use TPR triggers
         TimingHeader: # populate timing header with fake data
           rtmDacConfig[:]: 0x0
           fluxRampStepSize: 0x100
