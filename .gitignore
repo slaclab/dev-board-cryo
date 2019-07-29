@@ -14,6 +14,7 @@
 *.pyc
 *.bin
 *.ld
+*.hdf
 
 # OS files
 .DS_Store
