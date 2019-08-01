@@ -38,3 +38,6 @@ if { [llength [get_ips ddr4_0]] == 0 } {
 		CONFIG.System_Clock             {No_Buffer} \
 		] [get_ips ddr4_0]
 }
+
+set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+
