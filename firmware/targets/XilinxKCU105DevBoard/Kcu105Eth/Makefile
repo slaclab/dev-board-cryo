@@ -10,7 +10,7 @@ export TIMING_EXT_PKG = 1
 #export PROJECT=MyProject
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0x00000007
+export PRJ_VERSION = 0x00000008
 
 # Define target part
 export PRJ_PART = XCKU040-FFVA1156-2-E
