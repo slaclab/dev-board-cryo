@@ -96,9 +96,8 @@ end AppTop;
 
 architecture mapping of AppTop is
 
-   constant RSSI_SIZE_C     : positive := 5;
+   constant RSSI_SIZE_C     : positive := 4;
    constant RSSI_STRM_CFG_C : AxiStreamConfigArray(RSSI_SIZE_C - 1 downto 0) := (
-      4      => APP_CORE_CONFIG_G.appStreamConfig,
       others => ETH_AXIS_CONFIG_C
    );
 
@@ -106,8 +105,7 @@ architecture mapping of AppTop is
       0 => x"04",
       1 => x"02",
       2 => x"03",
-      3 => "10------",
-      4 => "11------"
+      3 => "10------"
    );
 
    constant NUM_APP_STRMS_C : natural := 2;
@@ -241,8 +239,8 @@ begin
             RSSI_SIZE_G     => RSSI_SIZE_C,
             RSSI_STRM_CFG_G => RSSI_STRM_CFG_C,
             RSSI_ROUTES_G   => RSSI_ROUTES_C,
-            UDP_SRV_SIZE_G  => 1,
-            UDP_SRV_PORTS_G => (0 => 8197),
+            UDP_SRV_SIZE_G  => 2,
+            UDP_SRV_PORTS_G => (0 => 8197, 1 => 8195),
             UDP_CLT_SIZE_G  => 1,
             UDP_CLT_PORTS_G => (0 => 8196)
          )
@@ -264,9 +262,13 @@ begin
             rssiObSlaves       => rssiObSlaves,
             -- UDP Interface
             udpIbSrvMasters(0) => obTimingEthMaster,
+            udpIbSrvMasters(1) => obAxisMasters(APP_DEBUG_STRM_C),
             udpIbSrvSlaves(0)  => obTimingEthSlave,
+            udpIbSrvSlaves(1)  => obAxisSlaves (APP_DEBUG_STRM_C),
             udpObSrvMasters(0) => ibTimingEthMaster,
+            udpObSrvMasters(1) => ibAxisMasters(APP_DEBUG_STRM_C),
             udpObSrvSlaves(0)  => ibTimingEthSlave,
+            udpObSrvSlaves(1)  => ibAxisSlaves(APP_DEBUG_STRM_C),
 
             udpIbCltMasters(0) => obAxisMasters(APP_BPCLT_STRM_C),
             udpIbCltSlaves (0) => obAxisSlaves (APP_BPCLT_STRM_C),
@@ -695,9 +697,9 @@ begin
       appTimingClk     <= timingClk;
       appTimingRst     <= timingRst;
 
-      rssiIbMasters(4)                <= obAxisMasters(APP_DEBUG_STRM_C);
-      obAxisSlaves (APP_DEBUG_STRM_C) <= rssiIbSlaves (4);
-      ibAxisMasters(APP_DEBUG_STRM_C) <= rssiObMasters(4);
-      rssiObSlaves (4)                <= ibAxisSlaves(APP_DEBUG_STRM_C);
+--      rssiIbMasters(4)                <= obAxisMasters(APP_DEBUG_STRM_C);
+--      obAxisSlaves (APP_DEBUG_STRM_C) <= rssiIbSlaves (4);
+--      ibAxisMasters(APP_DEBUG_STRM_C) <= rssiObMasters(4);
+--      rssiObSlaves (4)                <= ibAxisSlaves(APP_DEBUG_STRM_C);
 
 end mapping;

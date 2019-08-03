@@ -46,12 +46,13 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.AmcCarrierPkg.all;
 use work.TimingPkg.all;
+use work.EthMacPkg.all;
 
 entity AxisSysgenProcDataFramer is
    generic (
       TPD_G        : time                := 1 ns;
-      TDEST_G      : slv(7 downto 0)     := x"C1";
-      AXI_CONFIG_G : AxiStreamConfigType := ssiAxiStreamConfig(8));
+      TDEST_G      : slv(7 downto 0)     := x"C0";
+      AXI_CONFIG_G : AxiStreamConfigType := EMAC_AXIS_CONFIG_C);
    port (
       -- SYSGEN Interface (jesdClk domain)
       jesdClk        : in  sl;
@@ -350,9 +351,9 @@ begin
          BRAM_EN_G           => true,
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 11,     -- 2048 word buffer
+         FIFO_ADDR_WIDTH_G   => 12,     -- 4096 word buffer
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 1000,   -- 1000 + 1024 payload + 16 header = 2040 < 2048
+         FIFO_PAUSE_THRESH_G => (1000+2048),   -- 1000 + 2048 + 1024 payload + 16 header = 4088 < 4096
          INT_WIDTH_SELECT_G  => "CUSTOM", -- Enforcing a fixed width (not auto-selected from widest bus)
          INT_DATA_WIDTH_G    => 8, -- Enforcing 64-bit (8 byte) wide internal bus
          SLAVE_AXI_CONFIG_G  => AXI_CONFIG_C,
