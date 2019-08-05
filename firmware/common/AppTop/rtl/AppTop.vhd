@@ -152,10 +152,10 @@ architecture mapping of AppTop is
    signal obTimingEthMaster : AxiStreamMasterType;
    signal obTimingEthSlave  : AxiStreamSlaveType;
 
-   signal obAxisMasters     : AxiStreamMasterArray(NUM_APP_STRMS_C - 1 downto 0);
-   signal obAxisSlaves      : AxiStreamSlaveArray (NUM_APP_STRMS_C - 1 downto 0);
-   signal ibAxisMasters     : AxiStreamMasterArray(NUM_APP_STRMS_C - 1 downto 0);
-   signal ibAxisSlaves      : AxiStreamSlaveArray (NUM_APP_STRMS_C - 1 downto 0);
+   signal obAxisMasters     : AxiStreamMasterArray(NUM_APP_STRMS_C - 1 downto 0) := (others=>AXI_STREAM_MASTER_INIT_C);
+   signal obAxisSlaves      : AxiStreamSlaveArray (NUM_APP_STRMS_C - 1 downto 0) := (others=>AXI_STREAM_SLAVE_FORCE_C);
+   signal ibAxisMasters     : AxiStreamMasterArray(NUM_APP_STRMS_C - 1 downto 0) := (others=>AXI_STREAM_MASTER_INIT_C);
+   signal ibAxisSlaves      : AxiStreamSlaveArray (NUM_APP_STRMS_C - 1 downto 0) := (others=>AXI_STREAM_SLAVE_FORCE_C);
 
    signal timingClk         : sl;
    signal timingRst         : sl;
@@ -239,8 +239,8 @@ begin
             RSSI_SIZE_G     => RSSI_SIZE_C,
             RSSI_STRM_CFG_G => RSSI_STRM_CFG_C,
             RSSI_ROUTES_G   => RSSI_ROUTES_C,
-            UDP_SRV_SIZE_G  => 2,
-            UDP_SRV_PORTS_G => (0 => 8197, 1 => 8195),
+            UDP_SRV_SIZE_G  => 1,
+            UDP_SRV_PORTS_G => (0 => 8195),
             UDP_CLT_SIZE_G  => 1,
             UDP_CLT_PORTS_G => (0 => 8196)
          )
@@ -261,14 +261,10 @@ begin
             rssiObMasters      => rssiObMasters,
             rssiObSlaves       => rssiObSlaves,
             -- UDP Interface
-            udpIbSrvMasters(0) => obTimingEthMaster,
-            udpIbSrvMasters(1) => obAxisMasters(APP_DEBUG_STRM_C),
-            udpIbSrvSlaves(0)  => obTimingEthSlave,
-            udpIbSrvSlaves(1)  => obAxisSlaves (APP_DEBUG_STRM_C),
-            udpObSrvMasters(0) => ibTimingEthMaster,
-            udpObSrvMasters(1) => ibAxisMasters(APP_DEBUG_STRM_C),
-            udpObSrvSlaves(0)  => ibTimingEthSlave,
-            udpObSrvSlaves(1)  => ibAxisSlaves(APP_DEBUG_STRM_C),
+            udpIbSrvMasters(0) => obAxisMasters(APP_DEBUG_STRM_C),
+            udpIbSrvSlaves(0)  => obAxisSlaves (APP_DEBUG_STRM_C),
+            udpObSrvMasters(0) => ibAxisMasters(APP_DEBUG_STRM_C),
+            udpObSrvSlaves(0)  => ibAxisSlaves(APP_DEBUG_STRM_C),
 
             udpIbCltMasters(0) => obAxisMasters(APP_BPCLT_STRM_C),
             udpIbCltSlaves (0) => obAxisSlaves (APP_BPCLT_STRM_C),
