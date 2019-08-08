@@ -2,6 +2,7 @@
 target: prom
 
 export TIMING_EXT_PKG = 1
+export OVERRIDE_SUBMODULE_LOCKS = 1
 
 # You can rename the project (e.g., if you build different variants
 # from the same Makefile and source tree). Ruckus will print a fat
